@@ -1,18 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="sv">
 <head>
   <meta charset="UTF-8">
   <title>Verifiera Smartintyg</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f7f9;
+      margin: 0;
+      padding: 40px 20px;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: #2563eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin: 0;
+    }
+
+    .subtitle {
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 25px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-weight: 600;
+    }
+
+    .footer {
+      margin-top: 25px;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .external {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+  </style>
 </head>
+
 <body>
 
-<h2>Verifiera kursintyg</h2>
+<div class="container">
+  <div class="card">
 
-<textarea id="data" rows="10" cols="60" placeholder="Klistra in JSON här"></textarea>
-<br><br>
-<button onclick="verify()">Verifiera</button>
+    <div class="header">
+      <div class="logo">SI</div>
+      <h1>Verifiera kursintyg</h1>
+    </div>
 
-<p id="result"></p>
+    <div class="subtitle">
+      Detta är en fristående verifiering av Smartintyg.  
+      Verifiering sker lokalt i din webbläsare.
+    </div>
+
+    <textarea id="data" rows="10" placeholder="Klistra in intygsdata (JSON)..."></textarea>
+
+    <button onclick="verify()">Verifiera</button>
+
+    <div class="result" id="result"></div>
+
+    <div class="footer">
+      ✔ Oberoende verifiering  
+      ✔ Ingen koppling till server  
+      ✔ Kryptografiskt säker
+    </div>
+
+    <div class="external">
+      Detta är en extern verifieringssida (GitHub Pages)
+    </div>
+
+  </div>
+</div>
 
 <script>
 async function verify() {
@@ -39,7 +158,8 @@ async function verify() {
       return;
     }
 
-    const publicKeyBase64 = "PASTA DIN PUBLIC KEY HÄR";
+    const publicKeyBase64 = "MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
+
     const signature = Uint8Array.from(atob(parsed.certificate_signature), c => c.charCodeAt(0));
     const publicKeyBytes = Uint8Array.from(atob(publicKeyBase64), c => c.charCodeAt(0));
 
@@ -58,9 +178,8 @@ async function verify() {
       new TextEncoder().encode(parsed.certificate_hash)
     );
 
-    document.getElementById("result").innerText = isValid
-      ? "✅ Intyget är giltigt"
-      : "❌ Ogiltig signatur";
+    document.getElementById("result").innerText =
+      isValid ? "✅ Intyget är giltigt" : "❌ Ogiltig signatur";
 
   } catch (e) {
     document.getElementById("result").innerText = "Fel i data";
