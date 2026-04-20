@@ -15,7 +15,7 @@
     }
 
     .container {
-      max-width: 700px;
+      max-width: 760px;
       margin: auto;
     }
 
@@ -26,22 +26,100 @@
       box-shadow: 0 10px 25px rgba(0,0,0,0.05);
     }
 
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
     .header {
       display: flex;
       align-items: center;
       gap: 15px;
-      margin-bottom: 20px;
+      min-width: 0;
     }
 
-    h1 {
+    .header h1 {
       font-size: 20px;
       margin: 0;
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .lang-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .lang-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      background: white;
+      color: #1f2937;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .lang-btn:hover {
+      background: #f9fafb;
+    }
+
+    .lang-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      min-width: 220px;
+      max-height: 320px;
+      overflow: auto;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+      display: none;
+      z-index: 50;
+      padding: 6px;
+    }
+
+    .lang-menu.open {
+      display: block;
+    }
+
+    .lang-option {
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #1f2937;
+      margin: 0;
+    }
+
+    .lang-option:hover {
+      background: #f3f4f6;
     }
 
     .subtitle {
       color: #6b7280;
       font-size: 14px;
       margin-bottom: 25px;
+    }
+
+    .manual-info {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 10px;
     }
 
     textarea {
@@ -51,9 +129,10 @@
       border: 1px solid #d1d5db;
       font-family: monospace;
       font-size: 13px;
+      box-sizing: border-box;
     }
 
-    button {
+    button.primary {
       margin-top: 15px;
       padding: 12px 18px;
       border: none;
@@ -64,14 +143,33 @@
       cursor: pointer;
     }
 
+    button.primary:hover {
+      background: #1d4ed8;
+    }
+
     .result {
       margin-top: 20px;
       font-weight: 600;
       font-size: 16px;
     }
 
+    .human-info {
+      display: none;
+      margin-top: 20px;
+      line-height: 1.8;
+    }
+
+    .toggle-btn {
+      display: none;
+    }
+
+    .tech-section {
+      display: none;
+      margin-top: 20px;
+    }
+
     .hash-box {
-      margin-top: 15px;
+      margin-top: 10px;
       padding: 10px;
       background: #f3f4f6;
       border-radius: 6px;
@@ -84,6 +182,7 @@
       margin-top: 25px;
       font-size: 12px;
       color: #6b7280;
+      line-height: 1.8;
     }
 
     .external {
@@ -91,62 +190,80 @@
       font-size: 12px;
       color: #9ca3af;
     }
+
+    @media (max-width: 640px) {
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .lang-wrap {
+        align-self: flex-end;
+      }
+    }
   </style>
 </head>
 
 <body>
-
 <div class="container">
   <div class="card">
 
-    <div class="header">
-      <img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:60px;">
-      <div>
-        <h1>Verifiera kursintyg</h1>
-        <div style="font-size:13px; color:#6b7280;">
-          Smartintyg – extern verifiering
+    <div class="topbar">
+      <div class="header">
+        <img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:60px;" alt="Smartintyg badge">
+        <div>
+          <h1 id="title">Verifiera kursintyg</h1>
+          <div id="brandSubtitle" class="brand-subtitle">Smartintyg – extern verifiering</div>
         </div>
+      </div>
+
+      <div class="lang-wrap">
+        <button id="langBtn" class="lang-btn" type="button" aria-haspopup="true" aria-expanded="false">
+          🌍 <span id="langBtnLabel">Svenska</span>
+        </button>
+        <div id="langMenu" class="lang-menu"></div>
       </div>
     </div>
 
-    <div class="subtitle">
-      Detta är en fristående verifiering av Smartintyg.  
-      Verifiering sker lokalt i din webbläsare.
+    <div id="subtitle" class="subtitle">
+      Detta är en fristående verifiering av Smartintyg. Verifiering sker lokalt i din webbläsare.
     </div>
 
-    <!-- MANUELL INPUT -->
     <div id="manualSection">
+      <div id="manualInfo" class="manual-info">
+        Klistra in hela JSON-datan från ett Smartintyg (inklusive hash och signatur).
+      </div>
+
       <textarea id="data" rows="10" placeholder="Klistra in intygsdata (JSON)..."></textarea>
-      <button id="verifyBtn" onclick="verify()">Verifiera</button>
+
+      <button id="verifyBtn" class="primary" type="button" onclick="verify()">Verifiera</button>
     </div>
 
-    <div class="result" id="result"></div>
+    <div id="result" class="result"></div>
 
-    <!-- MÄNSKLIG INFO -->
-    <div id="humanInfo" style="display:none; margin-top:20px;">
-      <div><strong>Namn:</strong> <span id="name"></span></div>
-      <div><strong>Kurs:</strong> <span id="course"></span></div>
-      <div><strong>Datum:</strong> <span id="date"></span></div>
+    <div id="humanInfo" class="human-info">
+      <div><strong id="labelName">Namn:</strong> <span id="name"></span></div>
+      <div><strong id="labelCourse">Kurs:</strong> <span id="course"></span></div>
+      <div><strong id="labelDate">Datum:</strong> <span id="date"></span></div>
     </div>
 
-    <!-- TEKNISK INFO -->
-    <button id="toggleTech" onclick="toggleTech()" style="display:none;">
+    <button id="toggleTech" class="primary toggle-btn" type="button" onclick="toggleTech()">
       Visa teknisk verifiering
     </button>
 
-    <div id="techSection" style="display:none;">
-      <p><b>Verifieringsnyckel</b></p>
+    <div id="techSection" class="tech-section">
+      <p><b id="hashTitle">Verifieringsnyckel</b></p>
       <div id="hash" class="hash-box"></div>
-      <button onclick="copyHash()">Kopiera</button>
+      <button id="copyHashBtn" class="primary" type="button" onclick="copyHash()">Kopiera</button>
     </div>
 
-    <div class="footer">
-      ✔ Oberoende verifiering  
-      ✔ Ingen koppling till server  
+    <div id="footer" class="footer">
+      ✔ Oberoende verifiering<br>
+      ✔ Ingen koppling till server<br>
       ✔ Kryptografiskt säker
     </div>
 
-    <div class="external">
+    <div id="external" class="external">
       Detta är en extern verifieringssida (GitHub Pages)
     </div>
 
@@ -155,6 +272,403 @@
 
 <script>
 const publicKeyBase64 = "MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
+
+const languages = [
+  { code: "sv", label: "Svenska" },
+  { code: "da", label: "Dansk" },
+  { code: "de", label: "Deutsch" },
+  { code: "en", label: "English" },
+  { code: "es", label: "Español" },
+  { code: "fi", label: "Suomi" },
+  { code: "fr", label: "Français" },
+  { code: "it", label: "Italiano" },
+  { code: "nl", label: "Nederlands" },
+  { code: "nb", label: "Norsk (Bokmål)" },
+  { code: "pl", label: "Polski" },
+  { code: "pt", label: "Português" }
+];
+
+const translations = {
+  sv: {
+    title: "Verifiera kursintyg",
+    brandSubtitle: "Smartintyg – extern verifiering",
+    subtitle: "Detta är en fristående verifiering av Smartintyg. Verifiering sker lokalt i din webbläsare.",
+    manualInfo: "Klistra in hela JSON-datan från ett Smartintyg (inklusive hash och signatur).",
+    placeholder: "Klistra in intygsdata (JSON)...",
+    verifyBtn: "Verifiera",
+    valid: "✅ Intyget är giltigt",
+    invalidHash: "❌ Hash stämmer inte",
+    invalidSignature: "❌ Ogiltig signatur",
+    noData: "Ingen data angiven",
+    badData: "Fel i data",
+    labelName: "Namn:",
+    labelCourse: "Kurs:",
+    labelDate: "Datum:",
+    showTech: "Visa teknisk verifiering",
+    hideTech: "Dölj teknisk verifiering",
+    hashTitle: "Verifieringsnyckel",
+    copy: "Kopiera",
+    copied: "Kopierad!",
+    footer: "✔ Oberoende verifiering<br>✔ Ingen koppling till server<br>✔ Kryptografiskt säker",
+    external: "Detta är en extern verifieringssida (GitHub Pages)"
+  },
+  da: {
+    title: "Verificer kursbevis",
+    brandSubtitle: "Smartintyg – ekstern verificering",
+    subtitle: "Dette er en uafhængig verificering af Smartintyg. Verificering sker lokalt i din browser.",
+    manualInfo: "Indsæt hele JSON-dataen fra et Smartintyg (inklusive hash og signatur).",
+    placeholder: "Indsæt bevisdata (JSON)...",
+    verifyBtn: "Verificer",
+    valid: "✅ Beviset er gyldigt",
+    invalidHash: "❌ Hash stemmer ikke",
+    invalidSignature: "❌ Ugyldig signatur",
+    noData: "Ingen data angivet",
+    badData: "Fejl i data",
+    labelName: "Navn:",
+    labelCourse: "Kursus:",
+    labelDate: "Dato:",
+    showTech: "Vis teknisk verificering",
+    hideTech: "Skjul teknisk verificering",
+    hashTitle: "Verificeringsnøgle",
+    copy: "Kopiér",
+    copied: "Kopieret!",
+    footer: "✔ Uafhængig verificering<br>✔ Ingen forbindelse til server<br>✔ Kryptografisk sikker",
+    external: "Dette er en ekstern verificeringsside (GitHub Pages)"
+  },
+  de: {
+    title: "Kurszertifikat verifizieren",
+    brandSubtitle: "Smartintyg – externe Verifizierung",
+    subtitle: "Dies ist eine unabhängige Verifizierung von Smartintyg. Die Verifizierung erfolgt lokal in Ihrem Browser.",
+    manualInfo: "Fügen Sie die vollständigen JSON-Daten eines Smartintygs ein (einschließlich Hash und Signatur).",
+    placeholder: "Zertifikatsdaten einfügen (JSON)...",
+    verifyBtn: "Verifizieren",
+    valid: "✅ Das Zertifikat ist gültig",
+    invalidHash: "❌ Hash stimmt nicht überein",
+    invalidSignature: "❌ Ungültige Signatur",
+    noData: "Keine Daten angegeben",
+    badData: "Fehler in den Daten",
+    labelName: "Name:",
+    labelCourse: "Kurs:",
+    labelDate: "Datum:",
+    showTech: "Technische Verifizierung anzeigen",
+    hideTech: "Technische Verifizierung ausblenden",
+    hashTitle: "Verifizierungsschlüssel",
+    copy: "Kopieren",
+    copied: "Kopiert!",
+    footer: "✔ Unabhängige Verifizierung<br>✔ Keine Verbindung zum Server<br>✔ Kryptografisch sicher",
+    external: "Dies ist eine externe Verifizierungsseite (GitHub Pages)"
+  },
+  en: {
+    title: "Verify course certificate",
+    brandSubtitle: "Smartintyg – external verification",
+    subtitle: "This is an independent verification of Smartintyg. Verification happens locally in your browser.",
+    manualInfo: "Paste the full JSON data from a Smartintyg certificate (including hash and signature).",
+    placeholder: "Paste certificate data (JSON)...",
+    verifyBtn: "Verify",
+    valid: "✅ The certificate is valid",
+    invalidHash: "❌ Hash does not match",
+    invalidSignature: "❌ Invalid signature",
+    noData: "No data provided",
+    badData: "Invalid data",
+    labelName: "Name:",
+    labelCourse: "Course:",
+    labelDate: "Date:",
+    showTech: "Show technical verification",
+    hideTech: "Hide technical verification",
+    hashTitle: "Verification key",
+    copy: "Copy",
+    copied: "Copied!",
+    footer: "✔ Independent verification<br>✔ No server connection<br>✔ Cryptographically secure",
+    external: "This is an external verification page (GitHub Pages)"
+  },
+  es: {
+    title: "Verificar certificado del curso",
+    brandSubtitle: "Smartintyg – verificación externa",
+    subtitle: "Esta es una verificación independiente de Smartintyg. La verificación se realiza localmente en su navegador.",
+    manualInfo: "Pegue los datos JSON completos de un Smartintyg (incluyendo hash y firma).",
+    placeholder: "Pegue los datos del certificado (JSON)...",
+    verifyBtn: "Verificar",
+    valid: "✅ El certificado es válido",
+    invalidHash: "❌ El hash no coincide",
+    invalidSignature: "❌ Firma no válida",
+    noData: "No se proporcionaron datos",
+    badData: "Datos no válidos",
+    labelName: "Nombre:",
+    labelCourse: "Curso:",
+    labelDate: "Fecha:",
+    showTech: "Mostrar verificación técnica",
+    hideTech: "Ocultar verificación técnica",
+    hashTitle: "Clave de verificación",
+    copy: "Copiar",
+    copied: "¡Copiado!",
+    footer: "✔ Verificación independiente<br>✔ Sin conexión al servidor<br>✔ Criptográficamente seguro",
+    external: "Esta es una página de verificación externa (GitHub Pages)"
+  },
+  fi: {
+    title: "Vahvista kurssitodistus",
+    brandSubtitle: "Smartintyg – ulkoinen vahvistus",
+    subtitle: "Tämä on Smartintygin riippumaton vahvistus. Vahvistus tehdään paikallisesti selaimessasi.",
+    manualInfo: "Liitä koko Smartintygin JSON-data (mukaan lukien hash ja allekirjoitus).",
+    placeholder: "Liitä todistuksen tiedot (JSON)...",
+    verifyBtn: "Vahvista",
+    valid: "✅ Todistus on voimassa",
+    invalidHash: "❌ Hash ei täsmää",
+    invalidSignature: "❌ Virheellinen allekirjoitus",
+    noData: "Tietoja ei annettu",
+    badData: "Virhe tiedoissa",
+    labelName: "Nimi:",
+    labelCourse: "Kurssi:",
+    labelDate: "Päivämäärä:",
+    showTech: "Näytä tekninen vahvistus",
+    hideTech: "Piilota tekninen vahvistus",
+    hashTitle: "Vahvistusavain",
+    copy: "Kopioi",
+    copied: "Kopioitu!",
+    footer: "✔ Riippumaton vahvistus<br>✔ Ei yhteyttä palvelimeen<br>✔ Kryptografisesti turvallinen",
+    external: "Tämä on ulkoinen vahvistussivu (GitHub Pages)"
+  },
+  fr: {
+    title: "Vérifier le certificat de cours",
+    brandSubtitle: "Smartintyg – vérification externe",
+    subtitle: "Ceci est une vérification indépendante de Smartintyg. La vérification s’effectue localement dans votre navigateur.",
+    manualInfo: "Collez les données JSON complètes d’un Smartintyg (y compris le hash et la signature).",
+    placeholder: "Collez les données du certificat (JSON)...",
+    verifyBtn: "Vérifier",
+    valid: "✅ Le certificat est valide",
+    invalidHash: "❌ Le hash ne correspond pas",
+    invalidSignature: "❌ Signature invalide",
+    noData: "Aucune donnée fournie",
+    badData: "Données invalides",
+    labelName: "Nom :",
+    labelCourse: "Cours :",
+    labelDate: "Date :",
+    showTech: "Afficher la vérification technique",
+    hideTech: "Masquer la vérification technique",
+    hashTitle: "Clé de vérification",
+    copy: "Copier",
+    copied: "Copié !",
+    footer: "✔ Vérification indépendante<br>✔ Aucune connexion au serveur<br>✔ Sécurisé cryptographiquement",
+    external: "Ceci est une page de vérification externe (GitHub Pages)"
+  },
+  it: {
+    title: "Verifica certificato del corso",
+    brandSubtitle: "Smartintyg – verifica esterna",
+    subtitle: "Questa è una verifica indipendente di Smartintyg. La verifica avviene localmente nel browser.",
+    manualInfo: "Incolla i dati JSON completi di uno Smartintyg (inclusi hash e firma).",
+    placeholder: "Incolla i dati del certificato (JSON)...",
+    verifyBtn: "Verifica",
+    valid: "✅ Il certificato è valido",
+    invalidHash: "❌ L'hash non corrisponde",
+    invalidSignature: "❌ Firma non valida",
+    noData: "Nessun dato fornito",
+    badData: "Dati non validi",
+    labelName: "Nome:",
+    labelCourse: "Corso:",
+    labelDate: "Data:",
+    showTech: "Mostra verifica tecnica",
+    hideTech: "Nascondi verifica tecnica",
+    hashTitle: "Chiave di verifica",
+    copy: "Copia",
+    copied: "Copiato!",
+    footer: "✔ Verifica indipendente<br>✔ Nessuna connessione al server<br>✔ Sicuro crittograficamente",
+    external: "Questa è una pagina di verifica esterna (GitHub Pages)"
+  },
+  nl: {
+    title: "Cursuscertificaat verifiëren",
+    brandSubtitle: "Smartintyg – externe verificatie",
+    subtitle: "Dit is een onafhankelijke verificatie van Smartintyg. Verificatie gebeurt lokaal in uw browser.",
+    manualInfo: "Plak de volledige JSON-gegevens van een Smartintyg (inclusief hash en handtekening).",
+    placeholder: "Plak certificaatgegevens (JSON)...",
+    verifyBtn: "Verifiëren",
+    valid: "✅ Het certificaat is geldig",
+    invalidHash: "❌ Hash komt niet overeen",
+    invalidSignature: "❌ Ongeldige handtekening",
+    noData: "Geen gegevens opgegeven",
+    badData: "Ongeldige gegevens",
+    labelName: "Naam:",
+    labelCourse: "Cursus:",
+    labelDate: "Datum:",
+    showTech: "Technische verificatie tonen",
+    hideTech: "Technische verificatie verbergen",
+    hashTitle: "Verificatiesleutel",
+    copy: "Kopiëren",
+    copied: "Gekopieerd!",
+    footer: "✔ Onafhankelijke verificatie<br>✔ Geen verbinding met server<br>✔ Cryptografisch veilig",
+    external: "Dit is een externe verificatiepagina (GitHub Pages)"
+  },
+  nb: {
+    title: "Verifiser kursbevis",
+    brandSubtitle: "Smartintyg – ekstern verifisering",
+    subtitle: "Dette er en uavhengig verifisering av Smartintyg. Verifiseringen skjer lokalt i nettleseren din.",
+    manualInfo: "Lim inn hele JSON-dataen fra et Smartintyg (inkludert hash og signatur).",
+    placeholder: "Lim inn bevisdata (JSON)...",
+    verifyBtn: "Verifiser",
+    valid: "✅ Beviset er gyldig",
+    invalidHash: "❌ Hashen stemmer ikke",
+    invalidSignature: "❌ Ugyldig signatur",
+    noData: "Ingen data oppgitt",
+    badData: "Feil i data",
+    labelName: "Navn:",
+    labelCourse: "Kurs:",
+    labelDate: "Dato:",
+    showTech: "Vis teknisk verifisering",
+    hideTech: "Skjul teknisk verifisering",
+    hashTitle: "Verifiseringsnøkkel",
+    copy: "Kopier",
+    copied: "Kopiert!",
+    footer: "✔ Uavhengig verifisering<br>✔ Ingen kobling til server<br>✔ Kryptografisk sikker",
+    external: "Dette er en ekstern verifiseringsside (GitHub Pages)"
+  },
+  pl: {
+    title: "Zweryfikuj certyfikat kursu",
+    brandSubtitle: "Smartintyg – zewnętrzna weryfikacja",
+    subtitle: "To jest niezależna weryfikacja Smartintyg. Weryfikacja odbywa się lokalnie w przeglądarce.",
+    manualInfo: "Wklej pełne dane JSON z certyfikatu Smartintyg (w tym hash i podpis).",
+    placeholder: "Wklej dane certyfikatu (JSON)...",
+    verifyBtn: "Weryfikuj",
+    valid: "✅ Certyfikat jest ważny",
+    invalidHash: "❌ Hash się nie zgadza",
+    invalidSignature: "❌ Nieprawidłowy podpis",
+    noData: "Nie podano danych",
+    badData: "Nieprawidłowe dane",
+    labelName: "Imię i nazwisko:",
+    labelCourse: "Kurs:",
+    labelDate: "Data:",
+    showTech: "Pokaż weryfikację techniczną",
+    hideTech: "Ukryj weryfikację techniczną",
+    hashTitle: "Klucz weryfikacyjny",
+    copy: "Kopiuj",
+    copied: "Skopiowano!",
+    footer: "✔ Niezależna weryfikacja<br>✔ Brak połączenia z serwerem<br>✔ Bezpieczne kryptograficznie",
+    external: "To jest zewnętrzna strona weryfikacyjna (GitHub Pages)"
+  },
+  pt: {
+    title: "Verificar certificado do curso",
+    brandSubtitle: "Smartintyg – verificação externa",
+    subtitle: "Esta é uma verificação independente do Smartintyg. A verificação acontece localmente no seu navegador.",
+    manualInfo: "Cole os dados JSON completos de um Smartintyg (incluindo hash e assinatura).",
+    placeholder: "Cole os dados do certificado (JSON)...",
+    verifyBtn: "Verificar",
+    valid: "✅ O certificado é válido",
+    invalidHash: "❌ O hash não corresponde",
+    invalidSignature: "❌ Assinatura inválida",
+    noData: "Nenhum dado fornecido",
+    badData: "Dados inválidos",
+    labelName: "Nome:",
+    labelCourse: "Curso:",
+    labelDate: "Data:",
+    showTech: "Mostrar verificação técnica",
+    hideTech: "Ocultar verificação técnica",
+    hashTitle: "Chave de verificação",
+    copy: "Copiar",
+    copied: "Copiado!",
+    footer: "✔ Verificação independente<br>✔ Sem conexão com servidor<br>✔ Criptograficamente seguro",
+    external: "Esta é uma página de verificação externa (GitHub Pages)"
+  }
+};
+
+let currentLang = "sv";
+
+function detectLanguage() {
+  const stored = localStorage.getItem("verify_lang");
+  if (stored && translations[stored]) return stored;
+
+  const browserLang = (navigator.language || navigator.userLanguage || "sv").toLowerCase();
+
+  if (browserLang.startsWith("nb") || browserLang.startsWith("nn") || browserLang.startsWith("no")) return "nb";
+  if (browserLang.startsWith("sv")) return "sv";
+  if (browserLang.startsWith("da")) return "da";
+  if (browserLang.startsWith("de")) return "de";
+  if (browserLang.startsWith("en")) return "en";
+  if (browserLang.startsWith("es")) return "es";
+  if (browserLang.startsWith("fi")) return "fi";
+  if (browserLang.startsWith("fr")) return "fr";
+  if (browserLang.startsWith("it")) return "it";
+  if (browserLang.startsWith("nl")) return "nl";
+  if (browserLang.startsWith("pl")) return "pl";
+  if (browserLang.startsWith("pt")) return "pt";
+
+  return "en";
+}
+
+function setLanguage(lang) {
+  if (!translations[lang]) return;
+  currentLang = lang;
+  localStorage.setItem("verify_lang", lang);
+
+  const t = translations[lang];
+
+  document.documentElement.lang = lang;
+  document.getElementById("title").innerText = t.title;
+  document.getElementById("brandSubtitle").innerText = t.brandSubtitle;
+  document.getElementById("subtitle").innerText = t.subtitle;
+  document.getElementById("manualInfo").innerText = t.manualInfo;
+  document.getElementById("data").placeholder = t.placeholder;
+  document.getElementById("verifyBtn").innerText = t.verifyBtn;
+  document.getElementById("labelName").innerText = t.labelName;
+  document.getElementById("labelCourse").innerText = t.labelCourse;
+  document.getElementById("labelDate").innerText = t.labelDate;
+  document.getElementById("hashTitle").innerText = t.hashTitle;
+  document.getElementById("copyHashBtn").innerText = t.copy;
+  document.getElementById("footer").innerHTML = t.footer;
+  document.getElementById("external").innerText = t.external;
+
+  const label = languages.find(l => l.code === lang)?.label || lang;
+  document.getElementById("langBtnLabel").innerText = label;
+
+  const techSection = document.getElementById("techSection");
+  document.getElementById("toggleTech").innerText =
+    techSection.style.display === "block" ? t.hideTech : t.showTech;
+
+  if (lastStatusKey) {
+    renderStatus(lastStatusKey);
+  }
+
+  if (lastParsedData) {
+    document.getElementById("date").innerText = formatDate(lastParsedData.issued_date);
+  }
+}
+
+function buildLanguageMenu() {
+  const menu = document.getElementById("langMenu");
+  menu.innerHTML = "";
+
+  languages.forEach(lang => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "lang-option";
+    btn.textContent = lang.label;
+    btn.onclick = () => {
+      setLanguage(lang.code);
+      closeLangMenu();
+    };
+    menu.appendChild(btn);
+  });
+}
+
+function toggleLangMenu() {
+  const menu = document.getElementById("langMenu");
+  const btn = document.getElementById("langBtn");
+  const open = menu.classList.toggle("open");
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function closeLangMenu() {
+  const menu = document.getElementById("langMenu");
+  const btn = document.getElementById("langBtn");
+  menu.classList.remove("open");
+  btn.setAttribute("aria-expanded", "false");
+}
+
+document.addEventListener("click", (e) => {
+  const wrap = document.querySelector(".lang-wrap");
+  if (!wrap.contains(e.target)) {
+    closeLangMenu();
+  }
+});
+
+let lastStatusKey = null;
+let lastParsedData = null;
 
 function getDataFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -169,10 +683,27 @@ function getDataFromUrl() {
 
 function formatDate(dateString) {
   try {
-    return new Date(dateString).toLocaleDateString("sv-SE");
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat(currentLang === "nb" ? "nb-NO" : currentLang, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(date);
   } catch {
     return dateString;
   }
+}
+
+function renderStatus(key) {
+  lastStatusKey = key;
+  const t = translations[currentLang];
+  const result = document.getElementById("result");
+
+  if (key === "valid") result.innerText = t.valid;
+  if (key === "invalidHash") result.innerText = t.invalidHash;
+  if (key === "invalidSignature") result.innerText = t.invalidSignature;
+  if (key === "noData") result.innerText = t.noData;
+  if (key === "badData") result.innerText = t.badData;
 }
 
 async function verify(inputOverride = null) {
@@ -183,11 +714,18 @@ async function verify(inputOverride = null) {
   } else {
     const input = document.getElementById("data").value;
     if (!input) {
-      document.getElementById("result").innerText = "Ingen data angiven";
+      renderStatus("noData");
       return;
     }
-    parsed = JSON.parse(input);
+    try {
+      parsed = JSON.parse(input);
+    } catch {
+      renderStatus("badData");
+      return;
+    }
   }
+
+  lastParsedData = parsed;
 
   const encoder = new TextEncoder();
   const canonical = JSON.stringify({
@@ -203,7 +741,7 @@ async function verify(inputOverride = null) {
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 
   if (hashHex !== parsed.certificate_hash) {
-    document.getElementById("result").innerText = "❌ Hash stämmer inte";
+    renderStatus("invalidHash");
     return;
   }
 
@@ -226,7 +764,7 @@ async function verify(inputOverride = null) {
   );
 
   if (isValid) {
-    document.getElementById("result").innerText = "✅ Intyget är giltigt";
+    renderStatus("valid");
 
     document.getElementById("humanInfo").style.display = "block";
     document.getElementById("name").innerText = parsed.participant_name;
@@ -236,26 +774,32 @@ async function verify(inputOverride = null) {
     document.getElementById("toggleTech").style.display = "inline-block";
     document.getElementById("hash").innerText = parsed.certificate_hash;
   } else {
-    document.getElementById("result").innerText = "❌ Ogiltig signatur";
+    renderStatus("invalidSignature");
   }
 }
 
 function toggleTech() {
   const section = document.getElementById("techSection");
   section.style.display = section.style.display === "none" ? "block" : "none";
+  const t = translations[currentLang];
+  document.getElementById("toggleTech").innerText =
+    section.style.display === "block" ? t.hideTech : t.showTech;
 }
 
 function copyHash() {
   navigator.clipboard.writeText(document.getElementById("hash").innerText);
+  alert(translations[currentLang].copied);
 }
 
-/* AUTO-VERIFY */
+buildLanguageMenu();
+document.getElementById("langBtn").addEventListener("click", toggleLangMenu);
+setLanguage(detectLanguage());
+
 const urlData = getDataFromUrl();
 if (urlData) {
   document.getElementById("manualSection").style.display = "none";
   verify(urlData);
 }
 </script>
-
 </body>
 </html>
