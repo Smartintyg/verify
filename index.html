@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Verifiera Smartintyg</title>
+</head>
+<body>
+
+<h2>Verifiera kursintyg</h2>
+
+<textarea id="data" rows="10" cols="60" placeholder="Klistra in JSON här"></textarea>
+<br><br>
+<button onclick="verify()">Verifiera</button>
+
+<p id="result"></p>
+
+<script>
+async function verify() {
+  const input = document.getElementById("data").value;
+
+  try {
+    const parsed = JSON.parse(input);
+
+    const encoder = new TextEncoder();
+    const data = encoder.encode(JSON.stringify({
+      certificate_id: parsed.certificate_id,
+      verification_code: parsed.verification_code,
+      participant_name: parsed.participant_name,
+      course_name: parsed.course_name,
+      issued_date: parsed.issued_date
+    }));
+
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
+    if (hashHex !== parsed.certificate_hash) {
+      document.getElementById("result").innerText = "❌ Hash stämmer inte";
+      return;
+    }
+
+    const publicKeyBase64 = "PASTA DIN PUBLIC KEY HÄR";
+    const signature = Uint8Array.from(atob(parsed.certificate_signature), c => c.charCodeAt(0));
+    const publicKeyBytes = Uint8Array.from(atob(publicKeyBase64), c => c.charCodeAt(0));
+
+    const key = await crypto.subtle.importKey(
+      "spki",
+      publicKeyBytes,
+      { name: "Ed25519" },
+      false,
+      ["verify"]
+    );
+
+    const isValid = await crypto.subtle.verify(
+      { name: "Ed25519" },
+      key,
+      signature,
+      new TextEncoder().encode(parsed.certificate_hash)
+    );
+
+    document.getElementById("result").innerText = isValid
+      ? "✅ Intyget är giltigt"
+      : "❌ Ogiltig signatur";
+
+  } catch (e) {
+    document.getElementById("result").innerText = "Fel i data";
+  }
+}
+</script>
+
+</body>
+</html>
