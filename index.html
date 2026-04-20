@@ -29,20 +29,8 @@
     .header {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 15px;
       margin-bottom: 20px;
-    }
-
-    .logo {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: #2563eb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
     }
 
     h1 {
@@ -83,6 +71,17 @@
     .result {
       margin-top: 20px;
       font-weight: 600;
+      font-size: 16px;
+    }
+
+    .hash-box {
+      margin-top: 15px;
+      padding: 10px;
+      background: #f3f4f6;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      word-break: break-all;
     }
 
     .footer {
@@ -105,8 +104,13 @@
   <div class="card">
 
     <div class="header">
-      <div class="logo">SI</div>
-      <h1>Verifiera kursintyg</h1>
+      <img src="badge.svg" style="height:60px;">
+      <div>
+        <h1>Verifiera kursintyg</h1>
+        <div style="font-size:13px; color:#6b7280;">
+          Smartintyg – extern verifiering
+        </div>
+      </div>
     </div>
 
     <div class="subtitle">
@@ -119,6 +123,12 @@
     <button onclick="verify()">Verifiera</button>
 
     <div class="result" id="result"></div>
+
+    <div id="hashContainer" style="display:none;">
+      <p><b>Verifieringsnyckel</b></p>
+      <div id="hash" class="hash-box"></div>
+      <button onclick="copyHash()">Kopiera</button>
+    </div>
 
     <div class="footer">
       ✔ Oberoende verifiering  
@@ -134,56 +144,88 @@
 </div>
 
 <script>
-async function verify() {
-  const input = document.getElementById("data").value;
+const publicKeyBase64 = "MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
 
+function getDataFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const data = params.get("data");
+  if (!data) return null;
   try {
-    const parsed = JSON.parse(input);
+    return JSON.parse(atob(data));
+  } catch {
+    return null;
+  }
+}
 
-    const encoder = new TextEncoder();
-    const data = encoder.encode(JSON.stringify({
-      certificate_id: parsed.certificate_id,
-      verification_code: parsed.verification_code,
-      participant_name: parsed.participant_name,
-      course_name: parsed.course_name,
-      issued_date: parsed.issued_date
-    }));
+async function verify(inputOverride = null) {
+  let parsed;
 
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-
-    if (hashHex !== parsed.certificate_hash) {
-      document.getElementById("result").innerText = "❌ Hash stämmer inte";
+  if (inputOverride) {
+    parsed = inputOverride;
+  } else {
+    const input = document.getElementById("data").value;
+    if (!input) {
+      document.getElementById("result").innerText = "Ingen data angiven";
       return;
     }
-
-    const publicKeyBase64 = "MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
-
-    const signature = Uint8Array.from(atob(parsed.certificate_signature), c => c.charCodeAt(0));
-    const publicKeyBytes = Uint8Array.from(atob(publicKeyBase64), c => c.charCodeAt(0));
-
-    const key = await crypto.subtle.importKey(
-      "spki",
-      publicKeyBytes,
-      { name: "Ed25519" },
-      false,
-      ["verify"]
-    );
-
-    const isValid = await crypto.subtle.verify(
-      { name: "Ed25519" },
-      key,
-      signature,
-      new TextEncoder().encode(parsed.certificate_hash)
-    );
-
-    document.getElementById("result").innerText =
-      isValid ? "✅ Intyget är giltigt" : "❌ Ogiltig signatur";
-
-  } catch (e) {
-    document.getElementById("result").innerText = "Fel i data";
+    parsed = JSON.parse(input);
   }
+
+  const encoder = new TextEncoder();
+  const canonical = JSON.stringify({
+    certificate_id: parsed.certificate_id,
+    verification_code: parsed.verification_code,
+    participant_name: parsed.participant_name,
+    course_name: parsed.course_name,
+    issued_date: parsed.issued_date
+  });
+
+  const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(canonical));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
+  if (hashHex !== parsed.certificate_hash) {
+    document.getElementById("result").innerText = "❌ Hash stämmer inte";
+    return;
+  }
+
+  const signature = Uint8Array.from(atob(parsed.certificate_signature), c => c.charCodeAt(0));
+  const publicKeyBytes = Uint8Array.from(atob(publicKeyBase64), c => c.charCodeAt(0));
+
+  const key = await crypto.subtle.importKey(
+    "spki",
+    publicKeyBytes,
+    { name: "Ed25519" },
+    false,
+    ["verify"]
+  );
+
+  const isValid = await crypto.subtle.verify(
+    { name: "Ed25519" },
+    key,
+    signature,
+    encoder.encode(parsed.certificate_hash)
+  );
+
+  if (isValid) {
+    document.getElementById("result").innerText = "✅ Intyget är giltigt";
+    document.getElementById("hashContainer").style.display = "block";
+    document.getElementById("hash").innerText = parsed.certificate_hash;
+  } else {
+    document.getElementById("result").innerText = "❌ Ogiltig signatur";
+  }
+}
+
+function copyHash() {
+  const text = document.getElementById("hash").innerText;
+  navigator.clipboard.writeText(text);
+  alert("Kopierad!");
+}
+
+/* AUTO-VERIFY om data finns i URL */
+const urlData = getDataFromUrl();
+if (urlData) {
+  verify(urlData);
 }
 </script>
 
