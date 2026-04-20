@@ -44,10 +44,8 @@
       margin-bottom: 20px;
     }
 
-    .info {
-      font-size: 14px;
-      color: #6b7280;
-      margin-bottom: 15px;
+    .manual {
+      display: block;
     }
 
     textarea {
@@ -69,10 +67,6 @@
       cursor: pointer;
     }
 
-    button:hover {
-      background: #1d4ed8;
-    }
-
     .result {
       margin-top: 20px;
       font-weight: 600;
@@ -82,20 +76,6 @@
     .human {
       margin-top: 15px;
       font-size: 15px;
-    }
-
-    .box {
-      margin-top: 10px;
-      padding: 10px;
-      background: #f3f4f6;
-      border-radius: 6px;
-      font-family: monospace;
-      font-size: 12px;
-      word-break: break-all;
-    }
-
-    .section {
-      margin-top: 20px;
     }
 
     .footer {
@@ -122,48 +102,30 @@
     </div>
 
     <div class="subtitle">
-      Verifiering sker lokalt i din webbläsare. Ingen data skickas till server.
+      Verifiering sker lokalt i din webbläsare.
     </div>
 
-    <div id="manualInfo" class="info">
-      Klistra in hela JSON-datan från ett Smartintyg (inklusive hash och signatur).
+    <!-- MANUELL DEL -->
+    <div id="manualSection" class="manual">
+      <div style="margin-bottom:10px; color:#6b7280;">
+        Klistra in intygsdata (JSON)
+      </div>
+      <textarea id="data" rows="10"></textarea>
+      <button onclick="manualVerify()">Verifiera</button>
     </div>
-
-    <textarea id="data" rows="10" placeholder="Klistra in intygsdata (JSON)..."></textarea>
-    <button onclick="manualVerify()">Verifiera manuellt</button>
 
     <div id="result" class="result"></div>
 
+    <!-- MÄNSKLIG INFO -->
     <div id="humanInfo" class="human" style="display:none;">
       <div><strong>Namn:</strong> <span id="name"></span></div>
       <div><strong>Kurs:</strong> <span id="course"></span></div>
       <div><strong>Datum:</strong> <span id="date"></span></div>
     </div>
 
-    <button id="toggleTech" onclick="toggleTech()" style="display:none;">
-      Visa teknisk verifiering
-    </button>
-
-    <div id="details" style="display:none;">
-
-      <div class="section">
-        <strong>Verifieringsnyckel (hash)</strong>
-        <div id="hash" class="box"></div>
-        <button onclick="copyText('hash')">Kopiera</button>
-      </div>
-
-      <div class="section">
-        <strong>Signatur</strong>
-        <div id="signature" class="box"></div>
-        <button onclick="copyText('signature')">Kopiera</button>
-      </div>
-
-    </div>
-
     <div class="footer">
       ✔ Oberoende verifiering<br>
-      ✔ Kryptografiskt säker<br>
-      ✔ Fungerar utan Smartintyg
+      ✔ Kryptografiskt säker
     </div>
 
   </div>
@@ -181,6 +143,15 @@ function decodeUrlData() {
     return JSON.parse(atob(data));
   } catch {
     return null;
+  }
+}
+
+function formatDate(dateString) {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("sv-SE");
+  } catch {
+    return dateString;
   }
 }
 
@@ -229,37 +200,15 @@ async function verify(parsed) {
     document.getElementById("humanInfo").style.display = "block";
     document.getElementById("name").innerText = parsed.participant_name;
     document.getElementById("course").innerText = parsed.course_name;
-    document.getElementById("date").innerText = parsed.issued_date;
-
-    document.getElementById("toggleTech").style.display = "inline-block";
-
-    document.getElementById("hash").innerText = parsed.certificate_hash;
-    document.getElementById("signature").innerText = parsed.certificate_signature;
+    document.getElementById("date").innerText = formatDate(parsed.issued_date);
 
   } else {
     showResult("❌ Intyget kunde inte verifieras");
   }
 }
 
-function toggleTech() {
-  const el = document.getElementById("details");
-  const btn = document.getElementById("toggleTech");
-
-  if (el.style.display === "none") {
-    el.style.display = "block";
-    btn.innerText = "Dölj teknisk verifiering";
-  } else {
-    el.style.display = "none";
-    btn.innerText = "Visa teknisk verifiering";
-  }
-}
-
 function showResult(text) {
   document.getElementById("result").innerText = text;
-}
-
-function copyText(id) {
-  navigator.clipboard.writeText(document.getElementById(id).innerText);
 }
 
 function manualVerify() {
@@ -271,9 +220,11 @@ function manualVerify() {
   }
 }
 
+/* AUTO VERIFY */
 const autoData = decodeUrlData();
+
 if (autoData) {
-  document.getElementById("manualInfo").style.display = "none";
+  document.getElementById("manualSection").style.display = "none";
   verify(autoData);
 }
 </script>
