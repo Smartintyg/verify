@@ -76,7 +76,12 @@
     .result {
       margin-top: 20px;
       font-weight: 600;
-      font-size: 16px;
+      font-size: 18px;
+    }
+
+    .human {
+      margin-top: 15px;
+      font-size: 15px;
     }
 
     .box {
@@ -128,6 +133,16 @@
     <button onclick="manualVerify()">Verifiera manuellt</button>
 
     <div id="result" class="result"></div>
+
+    <div id="humanInfo" class="human" style="display:none;">
+      <div><strong>Namn:</strong> <span id="name"></span></div>
+      <div><strong>Kurs:</strong> <span id="course"></span></div>
+      <div><strong>Datum:</strong> <span id="date"></span></div>
+    </div>
+
+    <button id="toggleTech" onclick="toggleTech()" style="display:none;">
+      Visa teknisk verifiering
+    </button>
 
     <div id="details" style="display:none;">
 
@@ -186,7 +201,7 @@ async function verify(parsed) {
     .join("");
 
   if (hashHex !== parsed.certificate_hash) {
-    showResult("❌ Hash stämmer inte");
+    showResult("❌ Intyget kunde inte verifieras");
     return;
   }
 
@@ -210,11 +225,32 @@ async function verify(parsed) {
 
   if (valid) {
     showResult("✅ Intyget är giltigt");
-    document.getElementById("details").style.display = "block";
+
+    document.getElementById("humanInfo").style.display = "block";
+    document.getElementById("name").innerText = parsed.participant_name;
+    document.getElementById("course").innerText = parsed.course_name;
+    document.getElementById("date").innerText = parsed.issued_date;
+
+    document.getElementById("toggleTech").style.display = "inline-block";
+
     document.getElementById("hash").innerText = parsed.certificate_hash;
     document.getElementById("signature").innerText = parsed.certificate_signature;
+
   } else {
-    showResult("❌ Ogiltig signatur");
+    showResult("❌ Intyget kunde inte verifieras");
+  }
+}
+
+function toggleTech() {
+  const el = document.getElementById("details");
+  const btn = document.getElementById("toggleTech");
+
+  if (el.style.display === "none") {
+    el.style.display = "block";
+    btn.innerText = "Dölj teknisk verifiering";
+  } else {
+    el.style.display = "none";
+    btn.innerText = "Visa teknisk verifiering";
   }
 }
 
@@ -223,8 +259,7 @@ function showResult(text) {
 }
 
 function copyText(id) {
-  const text = document.getElementById(id).innerText;
-  navigator.clipboard.writeText(text);
+  navigator.clipboard.writeText(document.getElementById(id).innerText);
 }
 
 function manualVerify() {
@@ -232,11 +267,10 @@ function manualVerify() {
     const parsed = JSON.parse(document.getElementById("data").value);
     verify(parsed);
   } catch {
-    showResult("Fel i JSON");
+    showResult("Fel i data");
   }
 }
 
-/* AUTO VERIFY */
 const autoData = decodeUrlData();
 if (autoData) {
   document.getElementById("manualInfo").style.display = "none";
