@@ -7,7 +7,7 @@
 
   <style>
     body {
-      font-family: system-ui, -apple-system;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       background: #f5f7f9;
       margin: 0;
       padding: 40px 20px;
@@ -34,18 +34,14 @@
     }
 
     h1 {
-      margin: 0;
       font-size: 20px;
+      margin: 0;
     }
 
     .subtitle {
       color: #6b7280;
       font-size: 14px;
-      margin-bottom: 20px;
-    }
-
-    .manual {
-      display: block;
+      margin-bottom: 25px;
     }
 
     textarea {
@@ -58,30 +54,46 @@
     }
 
     button {
-      margin-top: 10px;
-      padding: 10px 16px;
+      margin-top: 15px;
+      padding: 12px 18px;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       background: #2563eb;
       color: white;
+      font-weight: 600;
       cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
     }
 
     .result {
       margin-top: 20px;
       font-weight: 600;
-      font-size: 18px;
+      font-size: 16px;
     }
 
-    .human {
+    .hash-box {
       margin-top: 15px;
-      font-size: 15px;
+      padding: 10px;
+      background: #f3f4f6;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      word-break: break-all;
     }
 
     .footer {
       margin-top: 25px;
       font-size: 12px;
       color: #6b7280;
+    }
+
+    .external {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #9ca3af;
     }
   </style>
 </head>
@@ -95,50 +107,59 @@
       <img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:60px;">
       <div>
         <h1>Verifiera kursintyg</h1>
-        <div style="font-size:13px;color:#6b7280;">
+        <div style="font-size:13px; color:#6b7280;">
           Smartintyg – extern verifiering
         </div>
       </div>
     </div>
 
     <div class="subtitle">
+      Detta är en fristående verifiering av Smartintyg.  
       Verifiering sker lokalt i din webbläsare.
     </div>
 
-    <!-- MANUELL DEL -->
-    <div id="manualSection" class="manual">
-      <div style="margin-bottom:10px; color:#6b7280;">
-        Klistra in intygsdata (JSON)
-      </div>
-      <textarea id="data" rows="10"></textarea>
-      <button onclick="manualVerify()">Verifiera</button>
-    </div>
+    <textarea id="data" rows="10" placeholder="Klistra in intygsdata (JSON)..."></textarea>
 
-    <div id="result" class="result"></div>
+    <button onclick="verify()">Verifiera</button>
 
-    <!-- MÄNSKLIG INFO -->
-    <div id="humanInfo" class="human" style="display:none;">
+    <div class="result" id="result"></div>
+
+    <div id="humanInfo" style="display:none; margin-top:20px;">
       <div><strong>Namn:</strong> <span id="name"></span></div>
       <div><strong>Kurs:</strong> <span id="course"></span></div>
       <div><strong>Datum:</strong> <span id="date"></span></div>
     </div>
 
+    <button id="toggleTech" onclick="toggleTech()" style="display:none;">
+      Visa teknisk verifiering
+    </button>
+
+    <div id="hashContainer" style="display:none;">
+      <p><b>Verifieringsnyckel</b></p>
+      <div id="hash" class="hash-box"></div>
+      <button onclick="copyHash()">Kopiera</button>
+    </div>
+
     <div class="footer">
-      ✔ Oberoende verifiering<br>
+      ✔ Oberoende verifiering  
+      ✔ Ingen koppling till server  
       ✔ Kryptografiskt säker
+    </div>
+
+    <div class="external">
+      Detta är en extern verifieringssida (GitHub Pages)
     </div>
 
   </div>
 </div>
 
 <script>
-const PUBLIC_KEY = "MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
+const publicKeyBase64 = "MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
 
-function decodeUrlData() {
+function getDataFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const data = params.get("data");
   if (!data) return null;
-
   try {
     return JSON.parse(atob(data));
   } catch {
@@ -155,9 +176,21 @@ function formatDate(dateString) {
   }
 }
 
-async function verify(parsed) {
-  const encoder = new TextEncoder();
+async function verify(inputOverride = null) {
+  let parsed;
 
+  if (inputOverride) {
+    parsed = inputOverride;
+  } else {
+    const input = document.getElementById("data").value;
+    if (!input) {
+      document.getElementById("result").innerText = "Ingen data angiven";
+      return;
+    }
+    parsed = JSON.parse(input);
+  }
+
+  const encoder = new TextEncoder();
   const canonical = JSON.stringify({
     certificate_id: parsed.certificate_id,
     verification_code: parsed.verification_code,
@@ -167,65 +200,58 @@ async function verify(parsed) {
   });
 
   const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(canonical));
-  const hashHex = Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 
   if (hashHex !== parsed.certificate_hash) {
-    showResult("❌ Intyget kunde inte verifieras");
+    document.getElementById("result").innerText = "❌ Hash stämmer inte";
     return;
   }
 
   const signature = Uint8Array.from(atob(parsed.certificate_signature), c => c.charCodeAt(0));
-  const keyBytes = Uint8Array.from(atob(PUBLIC_KEY), c => c.charCodeAt(0));
+  const publicKeyBytes = Uint8Array.from(atob(publicKeyBase64), c => c.charCodeAt(0));
 
   const key = await crypto.subtle.importKey(
     "spki",
-    keyBytes,
+    publicKeyBytes,
     { name: "Ed25519" },
     false,
     ["verify"]
   );
 
-  const valid = await crypto.subtle.verify(
+  const isValid = await crypto.subtle.verify(
     { name: "Ed25519" },
     key,
     signature,
     encoder.encode(parsed.certificate_hash)
   );
 
-  if (valid) {
-    showResult("✅ Intyget är giltigt");
+  if (isValid) {
+    document.getElementById("result").innerText = "✅ Intyget är giltigt";
+    document.getElementById("hashContainer").style.display = "block";
 
     document.getElementById("humanInfo").style.display = "block";
     document.getElementById("name").innerText = parsed.participant_name;
     document.getElementById("course").innerText = parsed.course_name;
     document.getElementById("date").innerText = formatDate(parsed.issued_date);
 
+    document.getElementById("hash").innerText = parsed.certificate_hash;
   } else {
-    showResult("❌ Intyget kunde inte verifieras");
+    document.getElementById("result").innerText = "❌ Ogiltig signatur";
   }
 }
 
-function showResult(text) {
-  document.getElementById("result").innerText = text;
+function copyHash() {
+  const text = document.getElementById("hash").innerText;
+  navigator.clipboard.writeText(text);
+  alert("Kopierad!");
 }
 
-function manualVerify() {
-  try {
-    const parsed = JSON.parse(document.getElementById("data").value);
-    verify(parsed);
-  } catch {
-    showResult("Fel i data");
-  }
-}
-
-/* AUTO VERIFY */
-const autoData = decodeUrlData();
-
-if (autoData) {
-  document.getElementById("manualSection").style.display = "none";
-  verify(autoData);
+/* AUTO-VERIFY */
+const urlData = getDataFromUrl();
+if (urlData) {
+  document.getElementById("data").style.display = "none";
+  verify(urlData);
 }
 </script>
 
