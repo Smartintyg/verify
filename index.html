@@ -64,10 +64,6 @@
       cursor: pointer;
     }
 
-    button:hover {
-      background: #1d4ed8;
-    }
-
     .result {
       margin-top: 20px;
       font-weight: 600;
@@ -118,23 +114,27 @@
       Verifiering sker lokalt i din webbläsare.
     </div>
 
-    <textarea id="data" rows="10" placeholder="Klistra in intygsdata (JSON)..."></textarea>
-
-    <button onclick="verify()">Verifiera</button>
+    <!-- MANUELL INPUT -->
+    <div id="manualSection">
+      <textarea id="data" rows="10" placeholder="Klistra in intygsdata (JSON)..."></textarea>
+      <button id="verifyBtn" onclick="verify()">Verifiera</button>
+    </div>
 
     <div class="result" id="result"></div>
 
+    <!-- MÄNSKLIG INFO -->
     <div id="humanInfo" style="display:none; margin-top:20px;">
       <div><strong>Namn:</strong> <span id="name"></span></div>
       <div><strong>Kurs:</strong> <span id="course"></span></div>
       <div><strong>Datum:</strong> <span id="date"></span></div>
     </div>
 
+    <!-- TEKNISK INFO -->
     <button id="toggleTech" onclick="toggleTech()" style="display:none;">
       Visa teknisk verifiering
     </button>
 
-    <div id="hashContainer" style="display:none;">
+    <div id="techSection" style="display:none;">
       <p><b>Verifieringsnyckel</b></p>
       <div id="hash" class="hash-box"></div>
       <button onclick="copyHash()">Kopiera</button>
@@ -169,8 +169,7 @@ function getDataFromUrl() {
 
 function formatDate(dateString) {
   try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("sv-SE");
+    return new Date(dateString).toLocaleDateString("sv-SE");
   } catch {
     return dateString;
   }
@@ -228,29 +227,32 @@ async function verify(inputOverride = null) {
 
   if (isValid) {
     document.getElementById("result").innerText = "✅ Intyget är giltigt";
-    document.getElementById("hashContainer").style.display = "block";
 
     document.getElementById("humanInfo").style.display = "block";
     document.getElementById("name").innerText = parsed.participant_name;
     document.getElementById("course").innerText = parsed.course_name;
     document.getElementById("date").innerText = formatDate(parsed.issued_date);
 
+    document.getElementById("toggleTech").style.display = "inline-block";
     document.getElementById("hash").innerText = parsed.certificate_hash;
   } else {
     document.getElementById("result").innerText = "❌ Ogiltig signatur";
   }
 }
 
+function toggleTech() {
+  const section = document.getElementById("techSection");
+  section.style.display = section.style.display === "none" ? "block" : "none";
+}
+
 function copyHash() {
-  const text = document.getElementById("hash").innerText;
-  navigator.clipboard.writeText(text);
-  alert("Kopierad!");
+  navigator.clipboard.writeText(document.getElementById("hash").innerText);
 }
 
 /* AUTO-VERIFY */
 const urlData = getDataFromUrl();
 if (urlData) {
-  document.getElementById("data").style.display = "none";
+  document.getElementById("manualSection").style.display = "none";
   verify(urlData);
 }
 </script>
