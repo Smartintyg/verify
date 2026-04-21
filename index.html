@@ -152,7 +152,7 @@ const publicKeyBase64 = "MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAe
 
 function getDataFromUrl() {
   const params = new URLSearchParams(window.location.search);
-  const data = params.get("data");
+  const data = params.get("d");
 
   if (!data) return null;
 
@@ -160,12 +160,23 @@ function getDataFromUrl() {
     const binary = atob(data);
     const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
     const decompressed = pako.inflate(bytes, { to: "string" });
-    return JSON.parse(decompressed);
+
+    const [hash, signature] = decompressed.split(".");
+
+    return {
+      certificate_hash: hash,
+      certificate_signature: signature,
+      certificate_id: "external",
+      verification_code: "external",
+      participant_name: "Verifierad via Smartintyg",
+      course_name: "",
+      issued_date: ""
+    };
+
   } catch {
     return null;
   }
 }
-
 function formatDate(date) {
   return new Date(date).toLocaleDateString();
 }
