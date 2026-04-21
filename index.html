@@ -13,15 +13,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f7f9;
 .header{display:flex;align-items:center;gap:15px}
 .subtitle{color:#6b7280;font-size:14px}
 .input{margin-top:20px}
-textarea{width:100%;padding:12px;border-radius:8px;border:1px solid #ddd;font-family:monospace}
+textarea{width:100%;padding:12px;border-radius:8px;border:1px solid #ddd;font-family:monospace;box-sizing:border-box}
 button{margin-top:10px;padding:10px 15px;border:none;border-radius:8px;background:#2563eb;color:#fff;cursor:pointer}
 .result{margin-top:20px;font-weight:600;font-size:16px}
 .human{margin-top:20px;display:none}
-.notice{margin-top:15px;padding:12px;background:#fff3cd;border-radius:8px}
+.notice{margin-top:15px;padding:12px;background:#fff3cd;border-radius:8px;display:none}
 .lang{cursor:pointer;border:1px solid #ddd;padding:6px 10px;border-radius:8px}
 .menu{display:none;position:absolute;background:#fff;border:1px solid #ddd;border-radius:8px;margin-top:5px;z-index:10}
 .menu div{padding:8px;cursor:pointer}
 .menu div:hover{background:#eee}
+.hidden{display:none!important}
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
@@ -32,33 +33,33 @@ button{margin-top:10px;padding:10px 15px;border:none;border-radius:8px;backgroun
 <div class="card">
 
 <div class="top">
-<div class="header">
-<img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:60px;">
-<div>
-<h1 id="title"></h1>
-<div id="subtitle" class="subtitle"></div>
-</div>
+  <div class="header">
+    <img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:60px;">
+    <div>
+      <h1 id="title"></h1>
+      <div id="subtitle" class="subtitle"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="lang" onclick="toggleLang()">🌍 <span id="langLabel"></span></div>
+    <div id="menu" class="menu"></div>
+  </div>
 </div>
 
-<div>
-<div class="lang" onclick="toggleLang()">🌍 <span id="langLabel"></span></div>
-<div id="menu" class="menu"></div>
-</div>
-</div>
-
-<div class="input">
-<div id="instruction"></div>
-<textarea id="input" rows="5"></textarea>
-<button onclick="manualVerify()" id="verifyBtn"></button>
+<div id="manualSection" class="input">
+  <div id="instruction"></div>
+  <textarea id="input" rows="5"></textarea>
+  <button onclick="manualVerify()" id="verifyBtn"></button>
 </div>
 
 <div id="result" class="result"></div>
-<div id="notice" class="notice" style="display:none;"></div>
+<div id="notice" class="notice"></div>
 
 <div id="human" class="human">
-<div><b id="tName"></b> <span id="name"></span></div>
-<div><b id="tCourse"></b> <span id="course"></span></div>
-<div><b id="tDate"></b> <span id="date"></span></div>
+  <div><b id="tName"></b> <span id="name"></span></div>
+  <div><b id="tCourse"></b> <span id="course"></span></div>
+  <div><b id="tDate"></b> <span id="date"></span></div>
 </div>
 
 </div>
@@ -69,133 +70,188 @@ const API_URL="https://apgrfymchppbokshvkai.supabase.co/functions/v1/verify-cert
 const APIKEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZ3JmeW1jaHBwYm9rc2h2a2FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyODQwOTEsImV4cCI6MjA4NTg2MDA5MX0._xNRVc99vIgtSBBEK5TDe89Dhfh9IqFah3PDh9jIX7g";
 const PUBLIC_KEY="MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
 
-/* ALLA språk */
 const translations={
-sv:{title:"Verifiera kursintyg",subtitle:"Extern verifiering via Smartintyg",instruction:"Klistra in kod (SI-XXXX) eller JSON.",btn:"Verifiera",valid:"✅ Intyget är giltigt",invalid:"❌ Ogiltig signatur",nodata:"❌ Ingen verifieringsdata",offline:"⚠️ Kunde inte nå Smartintyg. Intyget kan fortfarande vara giltigt.",name:"Namn:",course:"Kurs:",date:"Datum:"},
-da:{title:"Verificer kursbevis",subtitle:"Ekstern verificering",instruction:"Indsæt kode eller JSON.",btn:"Verificer",valid:"✅ Gyldigt",invalid:"❌ Ugyldig signatur",nodata:"❌ Ingen data",offline:"⚠️ Ikke tilgængelig.",name:"Navn:",course:"Kursus:",date:"Dato:"},
-de:{title:"Zertifikat prüfen",subtitle:"Externe Prüfung",instruction:"Code oder JSON einfügen.",btn:"Prüfen",valid:"✅ Gültig",invalid:"❌ Ungültig",nodata:"❌ Keine Daten",offline:"⚠️ Nicht erreichbar.",name:"Name:",course:"Kurs:",date:"Datum:"},
-en:{title:"Verify certificate",subtitle:"External verification",instruction:"Paste code or JSON.",btn:"Verify",valid:"✅ Valid",invalid:"❌ Invalid",nodata:"❌ No data",offline:"⚠️ Unavailable.",name:"Name:",course:"Course:",date:"Date:"},
-es:{title:"Verificar certificado",subtitle:"Verificación externa",instruction:"Pegue código o JSON.",btn:"Verificar",valid:"✅ Válido",invalid:"❌ Inválido",nodata:"❌ Sin datos",offline:"⚠️ No disponible.",name:"Nombre:",course:"Curso:",date:"Fecha:"},
-fi:{title:"Vahvista todistus",subtitle:"Ulkoinen vahvistus",instruction:"Liitä koodi tai JSON.",btn:"Vahvista",valid:"✅ Voimassa",invalid:"❌ Virheellinen",nodata:"❌ Ei dataa",offline:"⚠️ Ei saatavilla.",name:"Nimi:",course:"Kurssi:",date:"Päivämäärä:"},
-fr:{title:"Vérifier certificat",subtitle:"Vérification externe",instruction:"Collez code ou JSON.",btn:"Vérifier",valid:"✅ Valide",invalid:"❌ Invalide",nodata:"❌ Pas de données",offline:"⚠️ Indisponible.",name:"Nom:",course:"Cours:",date:"Date:"},
-it:{title:"Verifica certificato",subtitle:"Verifica esterna",instruction:"Inserisci codice o JSON.",btn:"Verifica",valid:"✅ Valido",invalid:"❌ Non valido",nodata:"❌ Nessun dato",offline:"⚠️ Non disponibile.",name:"Nome:",course:"Corso:",date:"Data:"},
-nl:{title:"Verifieer certificaat",subtitle:"Externe verificatie",instruction:"Plak code of JSON.",btn:"Verifieer",valid:"✅ Geldig",invalid:"❌ Ongeldig",nodata:"❌ Geen data",offline:"⚠️ Niet beschikbaar.",name:"Naam:",course:"Cursus:",date:"Datum:"},
-nb:{title:"Verifiser kursbevis",subtitle:"Ekstern verifisering",instruction:"Lim inn kode eller JSON.",btn:"Verifiser",valid:"✅ Gyldig",invalid:"❌ Ugyldig",nodata:"❌ Ingen data",offline:"⚠️ Ikke tilgjengelig.",name:"Navn:",course:"Kurs:",date:"Dato:"},
-pl:{title:"Zweryfikuj certyfikat",subtitle:"Weryfikacja zewnętrzna",instruction:"Wklej kod lub JSON.",btn:"Weryfikuj",valid:"✅ Ważny",invalid:"❌ Nieważny",nodata:"❌ Brak danych",offline:"⚠️ Niedostępne.",name:"Imię:",course:"Kurs:",date:"Data:"},
-pt:{title:"Verificar certificado",subtitle:"Verificação externa",instruction:"Cole código ou JSON.",btn:"Verificar",valid:"✅ Válido",invalid:"❌ Inválido",nodata:"❌ Sem dados",offline:"⚠️ Indisponível.",name:"Nome:",course:"Curso:",date:"Data:"}
+  sv:{title:"Verifiera kursintyg",subtitle:"Extern verifiering via Smartintyg",instruction:"Klistra in kod (SI-XXXX) eller JSON.",btn:"Verifiera",valid:"✅ Intyget är giltigt",invalid:"❌ Ogiltig signatur",nodata:"❌ Ingen verifieringsdata",offline:"⚠️ Kunde inte nå Smartintyg. Intyget kan fortfarande vara giltigt.",name:"Namn:",course:"Kurs:",date:"Datum:"},
+  da:{title:"Verificer kursbevis",subtitle:"Ekstern verificering",instruction:"Indsæt kode eller JSON.",btn:"Verificer",valid:"✅ Gyldigt",invalid:"❌ Ugyldig signatur",nodata:"❌ Ingen data",offline:"⚠️ Kunne ikke nå Smartintyg. Beviset kan stadig være gyldigt.",name:"Navn:",course:"Kursus:",date:"Dato:"},
+  de:{title:"Zertifikat prüfen",subtitle:"Externe Prüfung",instruction:"Code oder JSON einfügen.",btn:"Prüfen",valid:"✅ Gültig",invalid:"❌ Ungültige Signatur",nodata:"❌ Keine Daten",offline:"⚠️ Smartintyg konnte nicht erreicht werden. Das Zertifikat kann trotzdem gültig sein.",name:"Name:",course:"Kurs:",date:"Datum:"},
+  en:{title:"Verify certificate",subtitle:"External verification via Smartintyg",instruction:"Paste code (SI-XXXX) or JSON.",btn:"Verify",valid:"✅ Certificate is valid",invalid:"❌ Invalid signature",nodata:"❌ No verification data",offline:"⚠️ Could not reach Smartintyg. The certificate may still be valid.",name:"Name:",course:"Course:",date:"Date:"},
+  es:{title:"Verificar certificado",subtitle:"Verificación externa vía Smartintyg",instruction:"Pegue código o JSON.",btn:"Verificar",valid:"✅ El certificado es válido",invalid:"❌ Firma inválida",nodata:"❌ Sin datos",offline:"⚠️ No se pudo contactar con Smartintyg. El certificado aún puede ser válido.",name:"Nombre:",course:"Curso:",date:"Fecha:"},
+  fi:{title:"Vahvista todistus",subtitle:"Ulkoinen vahvistus Smartintygin kautta",instruction:"Liitä koodi tai JSON.",btn:"Vahvista",valid:"✅ Todistus on voimassa",invalid:"❌ Virheellinen allekirjoitus",nodata:"❌ Ei vahvistusdataa",offline:"⚠️ Smartintygia ei voitu tavoittaa. Todistus voi silti olla voimassa.",name:"Nimi:",course:"Kurssi:",date:"Päivämäärä:"},
+  fr:{title:"Vérifier certificat",subtitle:"Vérification externe via Smartintyg",instruction:"Collez le code ou le JSON.",btn:"Vérifier",valid:"✅ Le certificat est valide",invalid:"❌ Signature invalide",nodata:"❌ Aucune donnée de vérification",offline:"⚠️ Impossible de joindre Smartintyg. Le certificat peut tout de même être valide.",name:"Nom:",course:"Cours:",date:"Date:"},
+  it:{title:"Verifica certificato",subtitle:"Verifica esterna tramite Smartintyg",instruction:"Incolla codice o JSON.",btn:"Verifica",valid:"✅ Il certificato è valido",invalid:"❌ Firma non valida",nodata:"❌ Nessun dato di verifica",offline:"⚠️ Impossibile contattare Smartintyg. Il certificato potrebbe comunque essere valido.",name:"Nome:",course:"Corso:",date:"Data:"},
+  nl:{title:"Verifieer certificaat",subtitle:"Externe verificatie via Smartintyg",instruction:"Plak code of JSON.",btn:"Verifieer",valid:"✅ Het certificaat is geldig",invalid:"❌ Ongeldige handtekening",nodata:"❌ Geen verificatiegegevens",offline:"⚠️ Smartintyg kon niet worden bereikt. Het certificaat kan nog steeds geldig zijn.",name:"Naam:",course:"Cursus:",date:"Datum:"},
+  nb:{title:"Verifiser kursbevis",subtitle:"Ekstern verifisering via Smartintyg",instruction:"Lim inn kode eller JSON.",btn:"Verifiser",valid:"✅ Beviset er gyldig",invalid:"❌ Ugyldig signatur",nodata:"❌ Ingen verifiseringsdata",offline:"⚠️ Kunne ikke nå Smartintyg. Beviset kan fortsatt være gyldig.",name:"Navn:",course:"Kurs:",date:"Dato:"},
+  pl:{title:"Zweryfikuj certyfikat",subtitle:"Weryfikacja zewnętrzna przez Smartintyg",instruction:"Wklej kod lub JSON.",btn:"Weryfikuj",valid:"✅ Certyfikat jest ważny",invalid:"❌ Nieprawidłowy podpis",nodata:"❌ Brak danych weryfikacyjnych",offline:"⚠️ Nie udało się połączyć z Smartintyg. Certyfikat nadal może być ważny.",name:"Imię:",course:"Kurs:",date:"Data:"},
+  pt:{title:"Verificar certificado",subtitle:"Verificação externa via Smartintyg",instruction:"Cole código ou JSON.",btn:"Verificar",valid:"✅ O certificado é válido",invalid:"❌ Assinatura inválida",nodata:"❌ Sem dados de verificação",offline:"⚠️ Não foi possível contactar o Smartintyg. O certificado ainda pode ser válido.",name:"Nome:",course:"Curso:",date:"Data:"}
 };
 
 let lang = translations[navigator.language?.slice(0,2)] ? navigator.language.slice(0,2) : "en";
 
 function applyLang(){
-const t=translations[lang];
-title.innerText=t.title;
-subtitle.innerText=t.subtitle;
-instruction.innerText=t.instruction;
-verifyBtn.innerText=t.btn;
-tName.innerText=t.name;
-tCourse.innerText=t.course;
-tDate.innerText=t.date;
-langLabel.innerText=lang.toUpperCase();
+  const t=translations[lang];
+  title.innerText=t.title;
+  subtitle.innerText=t.subtitle;
+  instruction.innerText=t.instruction;
+  verifyBtn.innerText=t.btn;
+  tName.innerText=t.name;
+  tCourse.innerText=t.course;
+  tDate.innerText=t.date;
+  langLabel.innerText=lang.toUpperCase();
 }
 
 function toggleLang(){
-menu.style.display=menu.style.display==="block"?"none":"block";
+  menu.style.display=menu.style.display==="block"?"none":"block";
 }
 
 function buildMenu(){
-Object.keys(translations).forEach(l=>{
-const d=document.createElement("div");
-d.innerText=l.toUpperCase();
-d.onclick=()=>{lang=l;applyLang();menu.style.display="none";};
-menu.appendChild(d);
-});
+  Object.keys(translations).forEach(l=>{
+    const d=document.createElement("div");
+    d.innerText=l.toUpperCase();
+    d.onclick=()=>{lang=l;applyLang();menu.style.display="none";};
+    menu.appendChild(d);
+  });
 }
 
 function showNotice(text){
-notice.style.display="block";
-notice.innerText=text;
+  notice.style.display="block";
+  notice.innerText=text;
+}
+
+function clearNotice(){
+  notice.style.display="none";
+  notice.innerText="";
+}
+
+function showHuman(data){
+  human.style.display="block";
+  name.innerText=data.participant_name || "";
+  course.innerText=data.course_title || "";
+  date.innerText=data.certificate_date ? new Date(data.certificate_date).toLocaleDateString(lang) : "";
 }
 
 async function verifySignature(hash,signature){
-const pk=Uint8Array.from(atob(PUBLIC_KEY),c=>c.charCodeAt(0));
-const sig=Uint8Array.from(atob(signature),c=>c.charCodeAt(0));
-const key=await crypto.subtle.importKey("spki",pk,{name:"Ed25519"},false,["verify"]);
-return crypto.subtle.verify("Ed25519",key,sig,new TextEncoder().encode(hash));
+  const pk=Uint8Array.from(atob(PUBLIC_KEY),c=>c.charCodeAt(0));
+  const sig=Uint8Array.from(atob(signature),c=>c.charCodeAt(0));
+  const key=await crypto.subtle.importKey("spki",pk,{name:"Ed25519"},false,["verify"]);
+  return crypto.subtle.verify("Ed25519",key,sig,new TextEncoder().encode(hash));
 }
 
 async function fetchCertificate(code){
-try{
-const res=await fetch(API_URL,{
-method:"POST",
-headers:{"Content-Type":"application/json","apikey":APIKEY},
-body:JSON.stringify({code})
-});
-const data=await res.json();
-return data.found?data:null;
-}catch{return null;}
+  try{
+    const res=await fetch(API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","apikey":APIKEY},
+      body:JSON.stringify({code})
+    });
+    const data=await res.json();
+    return data.found?data:null;
+  }catch{
+    return null;
+  }
 }
 
-function getCompressed(){
-const d=new URLSearchParams(location.search).get("d");
-if(!d) return null;
-try{
-const bytes=Uint8Array.from(atob(d),c=>c.charCodeAt(0));
-const str=pako.inflate(bytes,{to:"string"});
-const [hash,signature]=str.split(".");
-return {hash,signature};
-}catch{return null;}
+function getCompressedFromUrl(){
+  const d=new URLSearchParams(location.search).get("d");
+  if(!d) return null;
+  try{
+    const bytes=Uint8Array.from(atob(d),c=>c.charCodeAt(0));
+    const str=pako.inflate(bytes,{to:"string"});
+    const [hash,signature]=str.split(".");
+    if(!hash || !signature) return null;
+    return {certificate_hash:hash, certificate_signature:signature};
+  }catch{
+    return null;
+  }
 }
 
-async function runVerification(val){
-
-if(val.startsWith("SI-")){
-const data=await fetchCertificate(val);
-if(!data){showNotice(translations[lang].offline);return;}
-
-const ok=await verifySignature(data.certificate_hash,data.certificate_signature);
-result.innerText=ok?translations[lang].valid:translations[lang].invalid;
-
-human.style.display="block";
-name.innerText=data.participant_name;
-course.innerText=data.course_title;
-date.innerText=new Date(data.certificate_date).toLocaleDateString(lang);
-return;
+function getLegacyDataFromUrl(){
+  const data=new URLSearchParams(location.search).get("data");
+  if(!data) return null;
+  try{
+    return JSON.parse(atob(data));
+  }catch{
+    return null;
+  }
 }
 
-/* JSON */
-try{
-const parsed=JSON.parse(val);
-const ok=await verifySignature(parsed.certificate_hash,parsed.certificate_signature);
-result.innerText=ok?translations[lang].valid:translations[lang].invalid;
-}catch{
-result.innerText=translations[lang].nodata;
-}
-}
-
-function manualVerify(){
-runVerification(input.value.trim());
+async function verifyFromJsonObject(obj){
+  if(!obj?.certificate_hash || !obj?.certificate_signature){
+    result.innerText=translations[lang].nodata;
+    return;
+  }
+  const ok=await verifySignature(obj.certificate_hash,obj.certificate_signature);
+  result.innerText=ok?translations[lang].valid:translations[lang].invalid;
 }
 
-/* INIT */
-applyLang();
-buildMenu();
+async function runVerificationFromCode(code){
+  clearNotice();
+  const data=await fetchCertificate(code);
 
-/* AUTO via URL */
-const params=new URLSearchParams(location.search);
+  if(!data){
+    result.innerText="";
+    showNotice(translations[lang].offline);
+    return;
+  }
 
-if(params.get("code")){
-input.value=params.get("code");
-runVerification(input.value);
-}else{
-const offline=getCompressed();
-if(offline){
-runVerification(JSON.stringify({
-certificate_hash:offline.hash,
-certificate_signature:offline.signature
-}));
+  const ok=await verifySignature(data.certificate_hash,data.certificate_signature);
+  result.innerText=ok?translations[lang].valid:translations[lang].invalid;
+  showHuman(data);
 }
+
+async function manualVerify(){
+  clearNotice();
+  human.style.display="none";
+  result.innerText="";
+
+  const val=input.value.trim();
+  if(!val){
+    result.innerText=translations[lang].nodata;
+    return;
+  }
+
+  if(val.startsWith("SI-")){
+    await runVerificationFromCode(val);
+    return;
+  }
+
+  try{
+    const parsed=JSON.parse(val);
+    await verifyFromJsonObject(parsed);
+  }catch{
+    result.innerText=translations[lang].nodata;
+  }
 }
+
+async function init(){
+  applyLang();
+  buildMenu();
+
+  const params=new URLSearchParams(location.search);
+  const code=params.get("code");
+  const compressed=getCompressedFromUrl();
+  const legacy=getLegacyDataFromUrl();
+
+  if(code || compressed || legacy){
+    manualSection.classList.add("hidden");
+  }
+
+  if(code){
+    await runVerificationFromCode(code);
+    return;
+  }
+
+  if(compressed){
+    await verifyFromJsonObject(compressed);
+    return;
+  }
+
+  if(legacy){
+    await verifyFromJsonObject(legacy);
+    return;
+  }
+}
+
+init();
 </script>
 
 </body>
