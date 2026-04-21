@@ -9,11 +9,16 @@
 body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f7f9;margin:0;padding:40px 20px;color:#1f2937}
 .container{max-width:760px;margin:auto}
 .card{background:white;border-radius:12px;padding:30px;box-shadow:0 10px 25px rgba(0,0,0,0.05)}
+.top{display:flex;justify-content:space-between;align-items:center}
 .header{display:flex;align-items:center;gap:15px}
 .subtitle{color:#6b7280;margin-top:10px}
 .result{margin-top:20px;font-weight:600;font-size:16px}
 .human{margin-top:20px;display:none}
-.notice{margin-top:15px;padding:10px;background:#fff3cd;border-radius:8px}
+.notice{margin-top:15px;padding:12px;background:#fff3cd;border-radius:8px}
+.lang{cursor:pointer;border:1px solid #ddd;padding:6px 10px;border-radius:8px}
+.menu{display:none;position:absolute;background:white;border:1px solid #ddd;border-radius:8px;margin-top:5px}
+.menu div{padding:8px;cursor:pointer}
+.menu div:hover{background:#eee}
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
@@ -23,11 +28,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f7f9;
 <div class="container">
 <div class="card">
 
+<div class="top">
 <div class="header">
 <img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:60px;">
 <div>
-<h1>Verifiera kursintyg</h1>
+<h1 id="title"></h1>
 <div class="subtitle">Smartintyg – extern verifiering</div>
+</div>
+</div>
+
+<div>
+<div class="lang" onclick="toggleLang()">🌍 <span id="langLabel"></span></div>
+<div id="menu" class="menu"></div>
 </div>
 </div>
 
@@ -35,109 +47,123 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f7f9;
 <div id="notice" class="notice" style="display:none;"></div>
 
 <div id="human" class="human">
-<div><b>Namn:</b> <span id="name"></span></div>
-<div><b>Kurs:</b> <span id="course"></span></div>
-<div><b>Datum:</b> <span id="date"></span></div>
+<div><b id="tName"></b> <span id="name"></span></div>
+<div><b id="tCourse"></b> <span id="course"></span></div>
+<div><b id="tDate"></b> <span id="date"></span></div>
 </div>
 
 </div>
 </div>
 
 <script>
-const API_URL = "https://apgrfymchppbokshvkai.supabase.co/functions/v1/verify-certificate";
-const APIKEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZ3JmeW1jaHBwYm9rc2h2a2FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyODQwOTEsImV4cCI6MjA4NTg2MDA5MX0._xNRVc99vIgtSBBEK5TDe89Dhfh9IqFah3PDh9jIX7g";
+const API_URL="https://apgrfymchppbokshvkai.supabase.co/functions/v1/verify-certificate";
+const APIKEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZ3JmeW1jaHBwYm9rc2h2a2FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyODQwOTEsImV4cCI6MjA4NTg2MDA5MX0._xNRVc99vIgtSBBEK5TDe89Dhfh9IqFah3PDh9jIX7g";
+const PUBLIC_KEY="MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
 
-const PUBLIC_KEY = "MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
+/* språk */
+const translations={
+sv:{title:"Verifiera kursintyg",name:"Namn:",course:"Kurs:",date:"Datum:",valid:"✅ Intyget är giltigt",invalid:"❌ Ogiltig signatur",nodata:"❌ Ingen verifieringsdata",offline:"⚠️ Smartintyg kunde inte nås. Intyget kan fortfarande vara giltigt."},
+en:{title:"Verify certificate",name:"Name:",course:"Course:",date:"Date:",valid:"✅ Certificate is valid",invalid:"❌ Invalid signature",nodata:"❌ No data",offline:"⚠️ Smartintyg unavailable. Certificate may still be valid."}
+};
+
+let lang=navigator.language.startsWith("sv")?"sv":"en";
+
+function applyLang(){
+const t=translations[lang];
+document.getElementById("title").innerText=t.title;
+document.getElementById("tName").innerText=t.name;
+document.getElementById("tCourse").innerText=t.course;
+document.getElementById("tDate").innerText=t.date;
+document.getElementById("langLabel").innerText=lang.toUpperCase();
+}
+
+function toggleLang(){
+const m=document.getElementById("menu");
+m.style.display=m.style.display==="block"?"none":"block";
+}
+
+function buildMenu(){
+const m=document.getElementById("menu");
+Object.keys(translations).forEach(l=>{
+const d=document.createElement("div");
+d.innerText=l.toUpperCase();
+d.onclick=()=>{lang=l;applyLang();m.style.display="none";};
+m.appendChild(d);
+});
+}
+
+function showNotice(t){
+const el=document.getElementById("notice");
+el.style.display="block";
+el.innerText=t;
+}
 
 function formatDate(d){
 if(!d) return "";
-return new Date(d).toLocaleDateString();
-}
-
-function showNotice(text){
-const el=document.getElementById("notice");
-el.style.display="block";
-el.innerText=text;
+return new Date(d).toLocaleDateString(lang);
 }
 
 async function fetchCertificate(code){
 try{
 const res=await fetch(API_URL,{
 method:"POST",
-headers:{
-"Content-Type":"application/json",
-"apikey":APIKEY
-},
+headers:{"Content-Type":"application/json","apikey":APIKEY},
 body:JSON.stringify({code})
 });
-if(!res.ok) return null;
 const data=await res.json();
-if(!data.found) return null;
-return data;
-}catch{
-return null;
-}
+return data.found?data:null;
+}catch{return null;}
 }
 
 function getCompressed(){
-const p=new URLSearchParams(location.search);
-const d=p.get("d");
+const d=new URLSearchParams(location.search).get("d");
 if(!d) return null;
-
 try{
 const bytes=Uint8Array.from(atob(d),c=>c.charCodeAt(0));
 const str=pako.inflate(bytes,{to:"string"});
 const [hash,signature]=str.split(".");
 return {hash,signature};
-}catch{
-return null;
-}
+}catch{return null;}
 }
 
 async function verifySignature(hash,signature){
 const pk=Uint8Array.from(atob(PUBLIC_KEY),c=>c.charCodeAt(0));
 const sig=Uint8Array.from(atob(signature),c=>c.charCodeAt(0));
-
 const key=await crypto.subtle.importKey("spki",pk,{name:"Ed25519"},false,["verify"]);
 return await crypto.subtle.verify("Ed25519",key,sig,new TextEncoder().encode(hash));
 }
 
 async function init(){
 
+applyLang();
+buildMenu();
+
 const params=new URLSearchParams(location.search);
 const code=params.get("code");
 
-let hash=null;
-let signature=null;
-let apiData=null;
+let hash=null,signature=null,apiData=null;
 
-/* 1. Försök API */
 if(code){
 apiData=await fetchCertificate(code);
-
 if(apiData){
 hash=apiData.certificate_hash;
 signature=apiData.certificate_signature;
 }else{
-showNotice("⚠️ Smartintyg kunde inte nås just nu. Det betyder inte att intyget är ogiltigt.");
+showNotice(translations[lang].offline);
 }
 }
 
-/* 2. Fallback till QR-data */
-const compressed=getCompressed();
-if(!hash && compressed){
-hash=compressed.hash;
-signature=compressed.signature;
+const offline=getCompressed();
+if(!hash && offline){
+hash=offline.hash;
+signature=offline.signature;
 }
 
-/* 3. Verifiera */
 if(hash && signature){
 const ok=await verifySignature(hash,signature);
+document.getElementById("result").innerText=
+ok?translations[lang].valid:translations[lang].invalid;
 
-document.getElementById("result").innerText =
-ok ? "✅ Intyget är giltigt" : "❌ Ogiltig signatur";
-
-/* Visa info om API fungerade */
 if(apiData){
 document.getElementById("human").style.display="block";
 document.getElementById("name").innerText=apiData.participant_name;
@@ -146,9 +172,8 @@ document.getElementById("date").innerText=formatDate(apiData.certificate_date);
 }
 
 }else{
-document.getElementById("result").innerText="❌ Ingen verifieringsdata";
+document.getElementById("result").innerText=translations[lang].nodata;
 }
-
 }
 
 init();
