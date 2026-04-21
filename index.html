@@ -10,9 +10,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f7f9;
 .container{max-width:760px;margin:auto}
 .card{background:white;border-radius:12px;padding:30px;box-shadow:0 10px 25px rgba(0,0,0,0.05)}
 .header{display:flex;align-items:center;gap:15px}
-.lang{position:absolute;top:20px;right:20px;cursor:pointer}
-.result{margin-top:20px;font-weight:600}
-.human-info{display:none;margin-top:20px}
+.subtitle{color:#6b7280;margin-top:10px}
+.result{margin-top:20px;font-weight:600;font-size:16px}
+.human{margin-top:20px;display:none}
+.notice{margin-top:15px;padding:10px;background:#fff3cd;border-radius:8px}
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
@@ -22,52 +23,61 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f7f9;
 <div class="container">
 <div class="card">
 
-<div class="lang" onclick="toggleLang()">🌍</div>
-
 <div class="header">
 <img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:60px;">
 <div>
-<h1 id="title">Verifiera kursintyg</h1>
+<h1>Verifiera kursintyg</h1>
+<div class="subtitle">Smartintyg – extern verifiering</div>
 </div>
 </div>
-
-<div id="info">Verifiering sker lokalt i din webbläsare.</div>
 
 <div id="result" class="result"></div>
+<div id="notice" class="notice" style="display:none;"></div>
 
-<div id="humanInfo" class="human-info">
-<div><b id="labelName">Namn:</b> <span id="name"></span></div>
-<div><b id="labelCourse">Kurs:</b> <span id="course"></span></div>
-<div><b id="labelDate">Datum:</b> <span id="date"></span></div>
+<div id="human" class="human">
+<div><b>Namn:</b> <span id="name"></span></div>
+<div><b>Kurs:</b> <span id="course"></span></div>
+<div><b>Datum:</b> <span id="date"></span></div>
 </div>
 
 </div>
 </div>
 
 <script>
-const API = "https://apgrfymchppbokshvkai.supabase.co/functions/v1/verify-certificate";
-const APIKEY = "DIN_ANON_KEY_HÄR";
+const API_URL = "https://apgrfymchppbokshvkai.supabase.co/functions/v1/verify-certificate";
+const APIKEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZ3JmeW1jaHBwYm9rc2h2a2FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyODQwOTEsImV4cCI6MjA4NTg2MDA5MX0._xNRVc99vIgtSBBEK5TDe89Dhfh9IqFah3PDh9jIX7g";
 
-let lang = "sv";
+const PUBLIC_KEY = "MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
 
-const t = {
-sv:{valid:"✅ Intyget är giltigt",fail:"❌ Ogiltig signatur",apiFail:"⚠️ Kunde inte hämta data från Smartintyg. Detta betyder inte att intyget är ogiltigt. Verifiering kan fortfarande göras via signaturen.",name:"Namn:",course:"Kurs:",date:"Datum:"},
-en:{valid:"✅ Certificate is valid",fail:"❌ Invalid signature",apiFail:"⚠️ Could not fetch data from Smartintyg. This does NOT mean the certificate is invalid.",name:"Name:",course:"Course:",date:"Date:"}
-};
-
-function setLang(l){
-lang=l;
-document.getElementById("labelName").innerText=t[l].name;
-document.getElementById("labelCourse").innerText=t[l].course;
-document.getElementById("labelDate").innerText=t[l].date;
+function formatDate(d){
+if(!d) return "";
+return new Date(d).toLocaleDateString();
 }
 
-function toggleLang(){
-lang = lang==="sv" ? "en" : "sv";
-setLang(lang);
+function showNotice(text){
+const el=document.getElementById("notice");
+el.style.display="block";
+el.innerText=text;
 }
 
-function formatDate(d){return d?new Date(d).toLocaleDateString():"";}
+async function fetchCertificate(code){
+try{
+const res=await fetch(API_URL,{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"apikey":APIKEY
+},
+body:JSON.stringify({code})
+});
+if(!res.ok) return null;
+const data=await res.json();
+if(!data.found) return null;
+return data;
+}catch{
+return null;
+}
+}
 
 function getCompressed(){
 const p=new URLSearchParams(location.search);
@@ -78,29 +88,14 @@ try{
 const bytes=Uint8Array.from(atob(d),c=>c.charCodeAt(0));
 const str=pako.inflate(bytes,{to:"string"});
 const [hash,signature]=str.split(".");
-return {certificate_hash:hash,certificate_signature:signature};
-}catch{return null;}
+return {hash,signature};
+}catch{
+return null;
+}
 }
 
-async function fetchAPI(code){
-try{
-const r=await fetch(API,{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"apikey":APIKEY
-},
-body:JSON.stringify({code})
-});
-if(!r.ok) return null;
-const d=await r.json();
-if(!d.found) return null;
-return d;
-}catch{return null;}
-}
-
-async function verifySig(hash,signature){
-const pk=Uint8Array.from(atob("MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk="),c=>c.charCodeAt(0));
+async function verifySignature(hash,signature){
+const pk=Uint8Array.from(atob(PUBLIC_KEY),c=>c.charCodeAt(0));
 const sig=Uint8Array.from(atob(signature),c=>c.charCodeAt(0));
 
 const key=await crypto.subtle.importKey("spki",pk,{name:"Ed25519"},false,["verify"]);
@@ -112,43 +107,50 @@ async function init(){
 const params=new URLSearchParams(location.search);
 const code=params.get("code");
 
-let data=null;
 let hash=null;
 let signature=null;
+let apiData=null;
 
-const compressed=getCompressed();
-
-if(compressed){
-hash=compressed.certificate_hash;
-signature=compressed.certificate_signature;
-}
-
+/* 1. Försök API */
 if(code){
-data=await fetchAPI(code);
-if(data){
-hash=data.certificate_hash;
-signature=data.certificate_signature;
-}
-else{
-document.getElementById("result").innerText=t[lang].apiFail;
+apiData=await fetchCertificate(code);
+
+if(apiData){
+hash=apiData.certificate_hash;
+signature=apiData.certificate_signature;
+}else{
+showNotice("⚠️ Smartintyg kunde inte nås just nu. Det betyder inte att intyget är ogiltigt.");
 }
 }
 
+/* 2. Fallback till QR-data */
+const compressed=getCompressed();
+if(!hash && compressed){
+hash=compressed.hash;
+signature=compressed.signature;
+}
+
+/* 3. Verifiera */
 if(hash && signature){
-const ok=await verifySig(hash,signature);
+const ok=await verifySignature(hash,signature);
 
-document.getElementById("result").innerText= ok ? t[lang].valid : t[lang].fail;
+document.getElementById("result").innerText =
+ok ? "✅ Intyget är giltigt" : "❌ Ogiltig signatur";
 
-if(data){
-document.getElementById("humanInfo").style.display="block";
-document.getElementById("name").innerText=data.participant_name;
-document.getElementById("course").innerText=data.course_title;
-document.getElementById("date").innerText=formatDate(data.certificate_date);
-}
-}
+/* Visa info om API fungerade */
+if(apiData){
+document.getElementById("human").style.display="block";
+document.getElementById("name").innerText=apiData.participant_name;
+document.getElementById("course").innerText=apiData.course_title;
+document.getElementById("date").innerText=formatDate(apiData.certificate_date);
 }
 
-setLang("sv");
+}else{
+document.getElementById("result").innerText="❌ Ingen verifieringsdata";
+}
+
+}
+
 init();
 </script>
 
