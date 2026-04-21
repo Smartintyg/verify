@@ -1,259 +1,155 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <title>Verifiera Smartintyg</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Verifiera Smartintyg</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f5f7f9;
-      margin: 0;
-      padding: 40px 20px;
-      color: #1f2937;
-    }
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f7f9;margin:0;padding:40px 20px;color:#1f2937}
+.container{max-width:760px;margin:auto}
+.card{background:white;border-radius:12px;padding:30px;box-shadow:0 10px 25px rgba(0,0,0,0.05)}
+.header{display:flex;align-items:center;gap:15px}
+.lang{position:absolute;top:20px;right:20px;cursor:pointer}
+.result{margin-top:20px;font-weight:600}
+.human-info{display:none;margin-top:20px}
+</style>
 
-    .container {
-      max-width: 760px;
-      margin: auto;
-    }
-
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-    }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-
-    .header {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      min-width: 0;
-    }
-
-    .header h1 {
-      font-size: 20px;
-      margin: 0;
-    }
-
-    .brand-subtitle {
-      font-size: 13px;
-      color: #6b7280;
-    }
-
-    .subtitle {
-      color: #6b7280;
-      font-size: 14px;
-      margin-bottom: 25px;
-    }
-
-    textarea {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      font-family: monospace;
-      font-size: 13px;
-      box-sizing: border-box;
-    }
-
-    button {
-      margin-top: 15px;
-      padding: 12px 18px;
-      border: none;
-      border-radius: 8px;
-      background: #2563eb;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .result {
-      margin-top: 20px;
-      font-weight: 600;
-      font-size: 16px;
-    }
-
-    .human-info {
-      display: none;
-      margin-top: 20px;
-    }
-
-    .tech-section {
-      display: none;
-      margin-top: 20px;
-    }
-
-    .hash-box {
-      margin-top: 10px;
-      padding: 10px;
-      background: #f3f4f6;
-      border-radius: 6px;
-      font-family: monospace;
-      font-size: 12px;
-      word-break: break-all;
-    }
-  </style>
-
-  <!-- ✅ PAKO -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 </head>
 
 <body>
 <div class="container">
-  <div class="card">
+<div class="card">
 
-    <div class="header">
-      <img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:60px;">
-      <div>
-        <h1>Verifiera kursintyg</h1>
-        <div class="brand-subtitle">Smartintyg – extern verifiering</div>
-      </div>
-    </div>
+<div class="lang" onclick="toggleLang()">🌍</div>
 
-    <div class="subtitle">
-      Verifiering sker lokalt i din webbläsare.
-    </div>
+<div class="header">
+<img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:60px;">
+<div>
+<h1 id="title">Verifiera kursintyg</h1>
+</div>
+</div>
 
-    <div id="manualSection">
-      <textarea id="data" rows="10" placeholder="Klistra in JSON..."></textarea>
-      <button onclick="verify()">Verifiera</button>
-    </div>
+<div id="info">Verifiering sker lokalt i din webbläsare.</div>
 
-    <div id="result" class="result"></div>
+<div id="result" class="result"></div>
 
-    <div id="humanInfo" class="human-info">
-      <div><b>Namn:</b> <span id="name"></span></div>
-      <div><b>Kurs:</b> <span id="course"></span></div>
-      <div><b>Datum:</b> <span id="date"></span></div>
-    </div>
+<div id="humanInfo" class="human-info">
+<div><b id="labelName">Namn:</b> <span id="name"></span></div>
+<div><b id="labelCourse">Kurs:</b> <span id="course"></span></div>
+<div><b id="labelDate">Datum:</b> <span id="date"></span></div>
+</div>
 
-    <button id="toggleTech" style="display:none;" onclick="toggleTech()">Visa teknisk info</button>
-
-    <div id="techSection" class="tech-section">
-      <div id="hash" class="hash-box"></div>
-    </div>
-
-  </div>
+</div>
 </div>
 
 <script>
-const publicKeyBase64 = "MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
+const API = "https://apgrfymchppbokshvkai.supabase.co/functions/v1/verify-certificate";
+const APIKEY = "DIN_ANON_KEY_HÄR";
 
-function getDataFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const data = params.get("d");
+let lang = "sv";
 
-  if (!data) return null;
+const t = {
+sv:{valid:"✅ Intyget är giltigt",fail:"❌ Ogiltig signatur",apiFail:"⚠️ Kunde inte hämta data från Smartintyg. Detta betyder inte att intyget är ogiltigt. Verifiering kan fortfarande göras via signaturen.",name:"Namn:",course:"Kurs:",date:"Datum:"},
+en:{valid:"✅ Certificate is valid",fail:"❌ Invalid signature",apiFail:"⚠️ Could not fetch data from Smartintyg. This does NOT mean the certificate is invalid.",name:"Name:",course:"Course:",date:"Date:"}
+};
 
-  try {
-    const binary = atob(data);
-    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-    const decompressed = pako.inflate(bytes, { to: "string" });
-
-    const [hash, signature] = decompressed.split(".");
-
-    return {
-      certificate_hash: hash,
-      certificate_signature: signature,
-      certificate_id: "external",
-      verification_code: "external",
-      participant_name: "Verifierad via Smartintyg",
-      course_name: "",
-      issued_date: ""
-    };
-
-  } catch {
-    return null;
-  }
-}
-function formatDate(date) {
-  return new Date(date).toLocaleDateString();
+function setLang(l){
+lang=l;
+document.getElementById("labelName").innerText=t[l].name;
+document.getElementById("labelCourse").innerText=t[l].course;
+document.getElementById("labelDate").innerText=t[l].date;
 }
 
-async function verify(inputOverride = null) {
-  let parsed;
-
-  if (inputOverride) {
-    parsed = inputOverride;
-  } else {
-    const input = document.getElementById("data").value;
-    if (!input) return;
-    parsed = JSON.parse(input);
-  }
-
-  const encoder = new TextEncoder();
-
-  const canonical = JSON.stringify({
-    certificate_id: parsed.certificate_id,
-    verification_code: parsed.verification_code,
-    participant_name: parsed.participant_name,
-    course_name: parsed.course_name,
-    issued_date: parsed.issued_date
-  });
-
-  const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(canonical));
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-
-  if (hashHex !== parsed.certificate_hash) {
-    document.getElementById("result").innerText = "❌ Hash fel";
-    return;
-  }
-
-  const signature = Uint8Array.from(atob(parsed.certificate_signature), c => c.charCodeAt(0));
-  const publicKeyBytes = Uint8Array.from(atob(publicKeyBase64), c => c.charCodeAt(0));
-
-  const key = await crypto.subtle.importKey(
-    "spki",
-    publicKeyBytes,
-    { name: "Ed25519" },
-    false,
-    ["verify"]
-  );
-
-  const isValid = await crypto.subtle.verify(
-    { name: "Ed25519" },
-    key,
-    signature,
-    encoder.encode(parsed.certificate_hash)
-  );
-
-  if (isValid) {
-    document.getElementById("result").innerText = "✅ Giltigt intyg";
-    document.getElementById("humanInfo").style.display = "block";
-    document.getElementById("toggleTech").style.display = "inline-block";
-
-    document.getElementById("name").innerText = parsed.participant_name;
-    document.getElementById("course").innerText = parsed.course_name;
-    document.getElementById("date").innerText = formatDate(parsed.issued_date);
-    document.getElementById("hash").innerText = parsed.certificate_hash;
-  } else {
-    document.getElementById("result").innerText = "❌ Ogiltig signatur";
-  }
+function toggleLang(){
+lang = lang==="sv" ? "en" : "sv";
+setLang(lang);
 }
 
-function toggleTech() {
-  const el = document.getElementById("techSection");
-  el.style.display = el.style.display === "none" ? "block" : "none";
+function formatDate(d){return d?new Date(d).toLocaleDateString():"";}
+
+function getCompressed(){
+const p=new URLSearchParams(location.search);
+const d=p.get("d");
+if(!d) return null;
+
+try{
+const bytes=Uint8Array.from(atob(d),c=>c.charCodeAt(0));
+const str=pako.inflate(bytes,{to:"string"});
+const [hash,signature]=str.split(".");
+return {certificate_hash:hash,certificate_signature:signature};
+}catch{return null;}
 }
 
-/* AUTO */
-const urlData = getDataFromUrl();
-if (urlData) {
-  document.getElementById("manualSection").style.display = "none";
-  verify(urlData);
+async function fetchAPI(code){
+try{
+const r=await fetch(API,{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"apikey":APIKEY
+},
+body:JSON.stringify({code})
+});
+if(!r.ok) return null;
+const d=await r.json();
+if(!d.found) return null;
+return d;
+}catch{return null;}
 }
+
+async function verifySig(hash,signature){
+const pk=Uint8Array.from(atob("MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk="),c=>c.charCodeAt(0));
+const sig=Uint8Array.from(atob(signature),c=>c.charCodeAt(0));
+
+const key=await crypto.subtle.importKey("spki",pk,{name:"Ed25519"},false,["verify"]);
+return await crypto.subtle.verify("Ed25519",key,sig,new TextEncoder().encode(hash));
+}
+
+async function init(){
+
+const params=new URLSearchParams(location.search);
+const code=params.get("code");
+
+let data=null;
+let hash=null;
+let signature=null;
+
+const compressed=getCompressed();
+
+if(compressed){
+hash=compressed.certificate_hash;
+signature=compressed.certificate_signature;
+}
+
+if(code){
+data=await fetchAPI(code);
+if(data){
+hash=data.certificate_hash;
+signature=data.certificate_signature;
+}
+else{
+document.getElementById("result").innerText=t[lang].apiFail;
+}
+}
+
+if(hash && signature){
+const ok=await verifySig(hash,signature);
+
+document.getElementById("result").innerText= ok ? t[lang].valid : t[lang].fail;
+
+if(data){
+document.getElementById("humanInfo").style.display="block";
+document.getElementById("name").innerText=data.participant_name;
+document.getElementById("course").innerText=data.course_title;
+document.getElementById("date").innerText=formatDate(data.certificate_date);
+}
+}
+}
+
+setLang("sv");
+init();
 </script>
 
 </body>
