@@ -147,15 +147,29 @@ notice.innerText=txt;
 }
 
 function showDetails(d){
-details.style.display="block";
-name.innerText=d.participant_name||"";
-course.innerText=d.course_title||d.course_name||"";
-const dt=d.certificate_date||d.issued_date;
-date.innerText=dt?new Date(dt).toLocaleDateString(lang):"";
-if(d.org_name||d.issuer_name){
-orgRow.style.display="block";
-org.innerText=d.org_name||d.issuer_name;
-}
+
+  const nameVal = d.participant_name || "";
+  const courseVal = d.course_title || d.course_name || "";
+  const dateVal = d.certificate_date || d.issued_date || "";
+  const orgVal = d.org_name || d.issuer_name || "";
+
+  // visa inte tom ruta
+  if(!nameVal && !courseVal && !dateVal){
+    return;
+  }
+
+  details.style.display = "block";
+
+  document.getElementById("name").innerText = nameVal;
+  document.getElementById("course").innerText = courseVal;
+
+  document.getElementById("date").innerText =
+    dateVal ? new Date(dateVal).toLocaleDateString(lang) : "";
+
+  if(orgVal){
+    document.getElementById("orgRow").style.display = "block";
+    document.getElementById("org").innerText = orgVal;
+  }
 }
 
 async function verifySignature(hash,signature){
