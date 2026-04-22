@@ -6,23 +6,99 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f7f9;margin:0;padding:40px 20px;color:#1f2937}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:#f5f7f9;
+  margin:0;
+  padding:40px 20px;
+  color:#1f2937;
+}
 .container{max-width:760px;margin:auto}
-.card{background:#fff;border-radius:12px;padding:30px;box-shadow:0 10px 25px rgba(0,0,0,0.05)}
-.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.header{display:flex;align-items:center;gap:15px}
-.subtitle{color:#6b7280;font-size:14px}
-.info{margin-top:15px;color:#6b7280;font-size:13px;line-height:1.5}
-.input{margin-top:20px}
-textarea{width:100%;padding:12px;border-radius:8px;border:1px solid #ddd;font-family:monospace}
-button{margin-top:10px;padding:10px 15px;border:none;border-radius:8px;background:#2563eb;color:#fff}
-.result{margin-top:20px;font-weight:600;font-size:16px}
-.human{margin-top:20px;display:none}
-.notice{margin-top:15px;padding:12px;background:#fff3cd;border-radius:8px;display:none}
-.lang{cursor:pointer;border:1px solid #ddd;padding:6px 10px;border-radius:8px}
-.menu{display:none;position:absolute;background:#fff;border:1px solid #ddd;border-radius:8px;margin-top:5px}
-.menu div{padding:8px;cursor:pointer}
-.menu div:hover{background:#eee}
+.card{
+  background:#fff;
+  border-radius:12px;
+  padding:30px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.05)
+}
+
+.header{
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.title{
+  font-size:22px;
+  margin:0;
+}
+
+.subtitle{
+  margin-top:6px;
+  font-size:13px;
+  color:#2563eb;
+  font-weight:600;
+}
+
+.info{
+  margin-top:12px;
+  font-size:13px;
+  color:#6b7280;
+  line-height:1.5;
+}
+
+.result{
+  margin-top:20px;
+  font-weight:600;
+  font-size:16px;
+}
+
+.human{
+  margin-top:20px;
+  display:none;
+  line-height:1.7;
+}
+
+.notice{
+  margin-top:15px;
+  padding:12px;
+  background:#fff3cd;
+  border-radius:8px;
+  display:none;
+}
+
+.input{
+  margin-top:20px;
+}
+
+textarea{
+  width:100%;
+  padding:12px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  font-family:monospace;
+}
+
+button{
+  margin-top:10px;
+  padding:10px 15px;
+  border:none;
+  border-radius:8px;
+  background:#2563eb;
+  color:#fff;
+  cursor:pointer;
+}
+
+.lang{
+  position:absolute;
+  top:20px;
+  right:20px;
+  cursor:pointer;
+  border:1px solid #ddd;
+  padding:6px 10px;
+  border-radius:8px;
+  background:#fff;
+}
+
 .hidden{display:none!important}
 </style>
 
@@ -33,18 +109,13 @@ button{margin-top:10px;padding:10px 15px;border:none;border-radius:8px;backgroun
 <div class="container">
 <div class="card">
 
-<div class="top">
+<div class="lang" onclick="toggleLang()">🌍 <span id="langLabel"></span></div>
+
 <div class="header">
 <img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:60px;">
 <div>
-<h1 id="title"></h1>
+<div id="title" class="title"></div>
 <div id="subtitle" class="subtitle"></div>
-</div>
-</div>
-
-<div>
-<div class="lang" onclick="toggleLang()">🌍 <span id="langLabel"></span></div>
-<div id="menu" class="menu"></div>
 </div>
 </div>
 
@@ -63,6 +134,7 @@ button{margin-top:10px;padding:10px 15px;border:none;border-radius:8px;backgroun
 <div><b id="tName"></b> <span id="name"></span></div>
 <div><b id="tCourse"></b> <span id="course"></span></div>
 <div><b id="tDate"></b> <span id="date"></span></div>
+<div id="orgRow" style="display:none;"><b id="tOrg"></b> <span id="org"></span></div>
 </div>
 
 </div>
@@ -74,24 +146,37 @@ const APIKEY="DIN_API_KEY_HÄR";
 const PUBLIC_KEY="MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
 
 const translations={
-sv:{title:"Verifiera kursintyg",subtitle:"Extern verifiering via Smartintyg",
-info:"Detta är en extern och oberoende verifiering av ett kursintyg. Verifieringen sker kryptografiskt och är inte beroende av att Smartintygs system är tillgängligt.",
-instruction:"Klistra in kod (SI-XXXX) eller JSON.",btn:"Verifiera",
-valid:"✅ Intyget är giltigt",invalid:"❌ Ogiltig signatur",
+sv:{
+title:"Verifiera kursintyg",
+subtitle:"Extern verifiering via Smartintyg",
+info:"Detta är en extern och oberoende verifiering. Intyget verifieras kryptografiskt och är inte beroende av att Smartintyg är tillgängligt.",
+instruction:"Klistra in kod (SI-XXXX) eller JSON.",
+btn:"Verifiera",
+valid:"✅ Intyget är giltigt",
+invalid:"❌ Ogiltig signatur",
 nodata:"❌ Ingen verifieringsdata",
-offline:"⚠️ Kunde inte nå Smartintyg. Intyget kan fortfarande vara giltigt.",
-name:"Namn:",course:"Kurs:",date:"Datum:"},
-
-en:{title:"Verify certificate",subtitle:"External verification via Smartintyg",
-info:"This is an external and independent verification of a certificate. Verification is cryptographic and does not depend on Smartintyg being available.",
-instruction:"Paste code or JSON.",btn:"Verify",
-valid:"✅ Certificate is valid",invalid:"❌ Invalid signature",
+offline:"⚠️ Smartintyg kunde inte nås. Intyget kan fortfarande vara giltigt.",
+name:"Namn:",
+course:"Kurs:",
+date:"Datum:",
+org:"Utfärdare:"
+},
+en:{
+title:"Verify certificate",
+subtitle:"External verification via Smartintyg",
+info:"This is an external independent verification. The certificate is cryptographically verified and does not depend on Smartintyg being available.",
+instruction:"Paste code or JSON.",
+btn:"Verify",
+valid:"✅ Certificate is valid",
+invalid:"❌ Invalid signature",
 nodata:"❌ No verification data",
 offline:"⚠️ Could not reach Smartintyg. Certificate may still be valid.",
-name:"Name:",course:"Course:",date:"Date:"}
+name:"Name:",
+course:"Course:",
+date:"Date:",
+org:"Issuer:"
+}
 };
-
-/* (övriga språk identiska struktur – du kan kopiera från tidigare version om du vill ha exakt alla) */
 
 let lang = translations[navigator.language?.slice(0,2)] ? navigator.language.slice(0,2) : "en";
 
@@ -105,20 +190,13 @@ verifyBtn.innerText=t.btn;
 tName.innerText=t.name;
 tCourse.innerText=t.course;
 tDate.innerText=t.date;
+tOrg.innerText=t.org;
 langLabel.innerText=lang.toUpperCase();
 }
 
 function toggleLang(){
-menu.style.display=menu.style.display==="block"?"none":"block";
-}
-
-function buildMenu(){
-Object.keys(translations).forEach(l=>{
-const d=document.createElement("div");
-d.innerText=l.toUpperCase();
-d.onclick=()=>{lang=l;applyLang();menu.style.display="none";};
-menu.appendChild(d);
-});
+lang = lang==="sv" ? "en" : "sv";
+applyLang();
 }
 
 function showNotice(text){
@@ -127,20 +205,23 @@ notice.innerText=text;
 }
 
 function showHuman(data){
-  const nameVal = data.participant_name || "";
-  const courseVal = data.course_title || data.course_name || "";
-  const dateVal = data.certificate_date || data.issued_date || "";
+const nameVal=data.participant_name || "";
+const courseVal=data.course_title || data.course_name || "";
+const dateVal=data.certificate_date || data.issued_date || "";
+const orgVal=data.org_name || data.issuer_name || "";
 
-  if(!nameVal && !courseVal && !dateVal){
-    return; // visa inget alls om ingen info finns
-  }
+if(!nameVal && !courseVal && !dateVal) return;
 
-  human.style.display="block";
+human.style.display="block";
 
-  document.getElementById("name").innerText = nameVal;
-  document.getElementById("course").innerText = courseVal;
-  document.getElementById("date").innerText =
-    dateVal ? new Date(dateVal).toLocaleDateString(lang) : "";
+name.innerText=nameVal;
+course.innerText=courseVal;
+date.innerText=dateVal ? new Date(dateVal).toLocaleDateString(lang) : "";
+
+if(orgVal){
+orgRow.style.display="block";
+org.innerText=orgVal;
+}
 }
 
 async function verifySignature(hash,signature){
@@ -183,7 +264,6 @@ return null;
 
 async function init(){
 applyLang();
-buildMenu();
 
 const params=new URLSearchParams(location.search);
 const code=params.get("code");
