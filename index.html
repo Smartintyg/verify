@@ -127,11 +127,20 @@ notice.innerText=text;
 }
 
 function showHuman(data){
-human.style.display="block";
-name.innerText=data.participant_name || "";
-course.innerText=data.course_title || data.course_name || "";
-date.innerText=(data.certificate_date || data.issued_date) ?
-new Date(data.certificate_date || data.issued_date).toLocaleDateString(lang) : "";
+  const nameVal = data.participant_name || "";
+  const courseVal = data.course_title || data.course_name || "";
+  const dateVal = data.certificate_date || data.issued_date || "";
+
+  if(!nameVal && !courseVal && !dateVal){
+    return; // visa inget alls om ingen info finns
+  }
+
+  human.style.display="block";
+
+  document.getElementById("name").innerText = nameVal;
+  document.getElementById("course").innerText = courseVal;
+  document.getElementById("date").innerText =
+    dateVal ? new Date(dateVal).toLocaleDateString(lang) : "";
 }
 
 async function verifySignature(hash,signature){
