@@ -6,73 +6,52 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f4f6;margin:0;padding:30px 15px;color:#1f2937}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f4f6;margin:0;padding:30px;color:#1f2937}
 .container{max-width:760px;margin:auto}
 .card{background:#fff;border-radius:16px;padding:28px;box-shadow:0 12px 30px rgba(0,0,0,0.08)}
-
-.top{display:flex;justify-content:space-between;align-items:flex-start}
 .header{display:flex;align-items:center;gap:14px}
 .title{font-size:22px;font-weight:700}
-.subtitle{font-size:13px;color:#2563eb;font-weight:600;margin-top:4px}
-.info{margin-top:10px;font-size:13px;color:#6b7280}
-
+.subtitle{font-size:13px;color:#2563eb;font-weight:600}
 .status{margin-top:20px;padding:14px;border-radius:10px;font-weight:600}
-.status.ok{background:#ecfdf5;color:#065f46}
-.status.error{background:#fef2f2;color:#7f1d1d}
-
-.notice{margin-top:12px;padding:12px;background:#fff7ed;border-radius:10px;display:none}
-
-.details{margin-top:18px;display:none;line-height:1.8}
-.input{margin-top:20px}
-
-textarea{width:100%;padding:12px;border-radius:8px;border:1px solid #ddd}
-button{margin-top:10px;padding:10px 15px;border:none;border-radius:8px;background:#2563eb;color:#fff}
-
-.lang{cursor:pointer;border:1px solid #ddd;padding:6px 10px;border-radius:8px}
-.menu{display:none;position:absolute;background:#fff;border:1px solid #ddd;border-radius:10px;z-index:10}
+.ok{background:#ecfdf5;color:#065f46}
+.error{background:#fef2f2;color:#7f1d1d}
+.details{margin-top:20px;display:none}
+textarea{width:100%;margin-top:10px;padding:10px}
+button{margin-top:10px;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:8px}
+.lang{position:absolute;top:15px;right:15px;cursor:pointer}
+.menu{display:none;position:absolute;background:#fff;border:1px solid #ddd}
 .menu div{padding:8px;cursor:pointer}
-.menu div:hover{background:#eee}
-.hidden{display:none!important}
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 </head>
 
 <body>
+<div class="lang" onclick="toggleLang()">🌍 <span id="langLabel"></span></div>
+<div id="menu" class="menu"></div>
+
 <div class="container">
 <div class="card">
 
-<div class="top">
-  <div class="header">
-    <img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:50px;">
-    <div>
-      <div id="title" class="title"></div>
-      <div id="subtitle" class="subtitle"></div>
-    </div>
-  </div>
-
-  <div>
-    <div class="lang" onclick="toggleLang()">🌍 <span id="langLabel"></span></div>
-    <div id="menu" class="menu"></div>
-  </div>
+<div class="header">
+<img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:50px;">
+<div>
+<div id="title" class="title"></div>
+<div id="subtitle" class="subtitle"></div>
+</div>
 </div>
 
-<div id="info" class="info"></div>
-
-<div id="statusBox" class="status hidden"></div>
-<div id="notice" class="notice"></div>
+<div id="statusBox" class="status"></div>
 
 <div id="details" class="details">
 <div><b id="tName"></b> <span id="name"></span></div>
 <div><b id="tCourse"></b> <span id="course"></span></div>
 <div><b id="tDate"></b> <span id="date"></span></div>
-<div id="orgRow" style="display:none;"><b id="tOrg"></b> <span id="org"></span></div>
 </div>
 
-<div id="manualSection" class="input">
-<div id="instruction"></div>
+<div id="manual">
 <textarea id="input"></textarea>
-<button id="verifyBtn" onclick="manualVerify()"></button>
+<button onclick="manualVerify()" id="btn"></button>
 </div>
 
 </div>
@@ -84,68 +63,59 @@ const APIKEY="DIN_API_KEY_HÄR";
 const PUBLIC_KEY="MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
 
 const translations={
-sv:{title:"Verifiera kursintyg",subtitle:"Extern verifiering via Smartintyg",info:"Extern oberoende verifiering.",instruction:"Klistra in kod eller JSON.",btn:"Verifiera",valid:"✔ Intyget är giltigt",invalid:"✖ Ogiltig signatur",offline:"⚠️ Kunde inte nå Smartintyg",name:"Namn:",course:"Kurs:",date:"Datum:",org:"Utfärdare:"},
-en:{title:"Verify certificate",subtitle:"External verification",info:"Independent verification.",instruction:"Paste code or JSON.",btn:"Verify",valid:"✔ Certificate valid",invalid:"✖ Invalid signature",offline:"⚠️ Could not reach Smartintyg",name:"Name:",course:"Course:",date:"Date:",org:"Issuer:"}
+sv:{title:"Verifiera",btn:"Verifiera",name:"Namn:",course:"Kurs:",date:"Datum:"},
+en:{title:"Verify",btn:"Verify",name:"Name:",course:"Course:",date:"Date:"},
+de:{title:"Prüfen",btn:"Prüfen",name:"Name:",course:"Kurs:",date:"Datum:"},
+fr:{title:"Vérifier",btn:"Vérifier",name:"Nom:",course:"Cours:",date:"Date:"},
+es:{title:"Verificar",btn:"Verificar",name:"Nombre:",course:"Curso:",date:"Fecha:"},
+it:{title:"Verifica",btn:"Verifica",name:"Nome:",course:"Corso:",date:"Data:"},
+nl:{title:"Verifieer",btn:"Verifieer",name:"Naam:",course:"Cursus:",date:"Datum:"},
+nb:{title:"Verifiser",btn:"Verifiser",name:"Navn:",course:"Kurs:",date:"Dato:"},
+da:{title:"Verificer",btn:"Verificer",name:"Navn:",course:"Kursus:",date:"Dato:"},
+fi:{title:"Vahvista",btn:"Vahvista",name:"Nimi:",course:"Kurssi:",date:"Päivä:"},
+pl:{title:"Zweryfikuj",btn:"Weryfikuj",name:"Imię:",course:"Kurs:",date:"Data:"},
+pt:{title:"Verificar",btn:"Verificar",name:"Nome:",course:"Curso:",date:"Data:"}
 };
 
-const languages=[
-{code:"sv",label:"Svenska"},
-{code:"en",label:"English"}
-];
-
-let lang=navigator.language.startsWith("sv")?"sv":"en";
+let lang="sv";
 
 function applyLang(){
 const t=translations[lang];
 title.innerText=t.title;
-subtitle.innerText=t.subtitle;
-info.innerText=t.info;
-instruction.innerText=t.instruction;
-verifyBtn.innerText=t.btn;
+btn.innerText=t.btn;
 tName.innerText=t.name;
 tCourse.innerText=t.course;
 tDate.innerText=t.date;
-tOrg.innerText=t.org;
 langLabel.innerText=lang.toUpperCase();
-}
-
-function buildMenu(){
-menu.innerHTML="";
-languages.forEach(l=>{
-const d=document.createElement("div");
-d.innerText=l.label;
-d.onclick=()=>{lang=l.code;applyLang();menu.style.display="none";}
-menu.appendChild(d);
-});
 }
 
 function toggleLang(){
 menu.style.display=menu.style.display==="block"?"none":"block";
 }
 
-function setStatus(ok){
-statusBox.classList.remove("hidden");
-statusBox.className="status "+(ok?"ok":"error");
-statusBox.innerText=ok?translations[lang].valid:translations[lang].invalid;
+function buildMenu(){
+Object.keys(translations).forEach(l=>{
+const d=document.createElement("div");
+d.innerText=l.toUpperCase();
+d.onclick=()=>{lang=l;applyLang();menu.style.display="none";}
+menu.appendChild(d);
+});
 }
 
-function showNotice(txt){
-notice.style.display="block";
-notice.innerText=txt;
+function normalize(d){
+return {
+name:d.participant_name||d.participantName||"",
+course:d.course_title||d.course_name||d.courseName||"",
+date:d.certificate_date||d.issued_date||d.issuedDate||""
+};
 }
 
 function showDetails(d){
+const n=normalize(d);
 details.style.display="block";
-name.innerText=d.participant_name || "-";
-course.innerText=d.course_title || d.course_name || "-";
-date.innerText=(d.certificate_date||d.issued_date)
-? new Date(d.certificate_date||d.issued_date).toLocaleDateString(lang)
-: "-";
-
-if(d.org_name){
-orgRow.style.display="block";
-org.innerText=d.org_name;
-}
+name.innerText=n.name;
+course.innerText=n.course;
+date.innerText=n.date;
 }
 
 async function verifySignature(hash,signature){
@@ -169,20 +139,9 @@ return data.found?data:null;
 
 function getData(){
 const p=new URLSearchParams(location.search);
-
 if(p.get("data")){
-try{return JSON.parse(atob(p.get("data")));}catch{}
+return JSON.parse(atob(p.get("data")));
 }
-
-if(p.get("d")){
-try{
-const bytes=Uint8Array.from(atob(p.get("d")),c=>c.charCodeAt(0));
-const str=pako.inflate(bytes,{to:"string"});
-const [hash,signature]=str.split(".");
-return {certificate_hash:hash,certificate_signature:signature};
-}catch{}
-}
-
 return null;
 }
 
@@ -194,39 +153,22 @@ const p=new URLSearchParams(location.search);
 const code=p.get("code");
 const data=getData();
 
-if(code||data) manualSection.classList.add("hidden");
-
 if(code){
 const res=await fetchCertificate(code);
-if(!res){showNotice(translations[lang].offline);return;}
-const ok=await verifySignature(res.certificate_hash,res.certificate_signature);
-setStatus(ok);
 showDetails(res);
 return;
 }
 
 if(data){
-const ok=await verifySignature(data.certificate_hash,data.certificate_signature);
-setStatus(ok);
-
-if(!data.participant_name){
-const code=p.get("code");
-if(code){
-const apiData=await fetchCertificate(code);
-if(apiData){showDetails(apiData);return;}
-}
-}
-
 showDetails(data);
 }
 }
 
 function manualVerify(){
-location.href="?code="+input.value.trim();
+location.href="?code="+input.value;
 }
 
 init();
 </script>
-
 </body>
 </html>
