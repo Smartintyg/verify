@@ -386,12 +386,14 @@ async function manualVerify(){
 
   if(val.startsWith("SI-")){
     await runCodeVerification(val);
+    document.getElementById("manualSection").classList.add("hidden");
     return;
   }
 
   try{
     const parsed = JSON.parse(val);
     await verifyJsonObject(parsed);
+    document.getElementById("manualSection").classList.add("hidden");
   }catch{
     setStatus(false);
     document.getElementById("statusBox").innerText = translations[lang].nodata;
