@@ -6,99 +6,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  background:#f5f7f9;
-  margin:0;
-  padding:40px 20px;
-  color:#1f2937;
-}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f4f6;margin:0;padding:30px 15px;color:#1f2937}
 .container{max-width:760px;margin:auto}
-.card{
-  background:#fff;
-  border-radius:12px;
-  padding:30px;
-  box-shadow:0 10px 25px rgba(0,0,0,0.05)
-}
-
-.header{
-  display:flex;
-  align-items:center;
-  gap:15px;
-}
-
-.title{
-  font-size:22px;
-  margin:0;
-}
-
-.subtitle{
-  margin-top:6px;
-  font-size:13px;
-  color:#2563eb;
-  font-weight:600;
-}
-
-.info{
-  margin-top:12px;
-  font-size:13px;
-  color:#6b7280;
-  line-height:1.5;
-}
-
-.result{
-  margin-top:20px;
-  font-weight:600;
-  font-size:16px;
-}
-
-.human{
-  margin-top:20px;
-  display:none;
-  line-height:1.7;
-}
-
-.notice{
-  margin-top:15px;
-  padding:12px;
-  background:#fff3cd;
-  border-radius:8px;
-  display:none;
-}
-
-.input{
-  margin-top:20px;
-}
-
-textarea{
-  width:100%;
-  padding:12px;
-  border-radius:8px;
-  border:1px solid #ddd;
-  font-family:monospace;
-}
-
-button{
-  margin-top:10px;
-  padding:10px 15px;
-  border:none;
-  border-radius:8px;
-  background:#2563eb;
-  color:#fff;
-  cursor:pointer;
-}
-
-.lang{
-  position:absolute;
-  top:20px;
-  right:20px;
-  cursor:pointer;
-  border:1px solid #ddd;
-  padding:6px 10px;
-  border-radius:8px;
-  background:#fff;
-}
-
+.card{background:#fff;border-radius:16px;padding:28px;box-shadow:0 12px 30px rgba(0,0,0,0.08)}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.header{display:flex;align-items:center;gap:14px}
+.title{font-size:22px;font-weight:700;margin:0}
+.subtitle{font-size:13px;color:#2563eb;font-weight:600;margin-top:4px}
+.info{margin-top:10px;font-size:13px;color:#6b7280;line-height:1.5}
+.status{margin-top:20px;padding:14px;border-radius:10px;font-weight:600;display:flex;align-items:center;gap:10px}
+.status.ok{background:#ecfdf5;color:#065f46}
+.status.error{background:#fef2f2;color:#7f1d1d}
+.notice{margin-top:12px;padding:12px;background:#fff7ed;border-radius:10px;color:#92400e;display:none}
+.details{margin-top:18px;display:none;line-height:1.8}
+.details b{color:#374151}
+.input{margin-top:20px}
+textarea{width:100%;padding:12px;border-radius:8px;border:1px solid #ddd;font-family:monospace}
+button{margin-top:10px;padding:10px 15px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:600;cursor:pointer}
+.lang-wrap{position:relative}
+.lang{cursor:pointer;border:1px solid #ddd;padding:6px 10px;border-radius:8px;background:#fff}
+.menu{display:none;position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid #ddd;border-radius:10px;box-shadow:0 10px 20px rgba(0,0,0,0.08);z-index:10;max-height:260px;overflow:auto;min-width:180px}
+.menu div{padding:8px 10px;cursor:pointer}
+.menu div:hover{background:#f3f4f6}
 .hidden{display:none!important}
 </style>
 
@@ -109,32 +38,37 @@ button{
 <div class="container">
 <div class="card">
 
-<div class="lang" onclick="toggleLang()">🌍 <span id="langLabel"></span></div>
+<div class="top">
+  <div class="header">
+    <img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:50px;">
+    <div>
+      <h1 id="title" class="title"></h1>
+      <div id="subtitle" class="subtitle"></div>
+    </div>
+  </div>
 
-<div class="header">
-<img src="https://raw.githubusercontent.com/Smartintyg/verify/refs/heads/main/Badge.svg" style="height:60px;">
-<div>
-<div id="title" class="title"></div>
-<div id="subtitle" class="subtitle"></div>
-</div>
+  <div class="lang-wrap">
+    <div class="lang" onclick="toggleLang()">🌍 <span id="langLabel"></span></div>
+    <div id="menu" class="menu"></div>
+  </div>
 </div>
 
 <div id="info" class="info"></div>
 
-<div id="manualSection" class="input">
-<div id="instruction"></div>
-<textarea id="input"></textarea>
-<button onclick="manualVerify()" id="verifyBtn"></button>
-</div>
-
-<div id="result" class="result"></div>
+<div id="statusBox" class="status hidden"></div>
 <div id="notice" class="notice"></div>
 
-<div id="human" class="human">
-<div><b id="tName"></b> <span id="name"></span></div>
-<div><b id="tCourse"></b> <span id="course"></span></div>
-<div><b id="tDate"></b> <span id="date"></span></div>
-<div id="orgRow" style="display:none;"><b id="tOrg"></b> <span id="org"></span></div>
+<div id="details" class="details">
+  <div><b id="tName"></b> <span id="name"></span></div>
+  <div><b id="tCourse"></b> <span id="course"></span></div>
+  <div><b id="tDate"></b> <span id="date"></span></div>
+  <div id="orgRow" style="display:none;"><b id="tOrg"></b> <span id="org"></span></div>
+</div>
+
+<div id="manualSection" class="input">
+  <div id="instruction"></div>
+  <textarea id="input"></textarea>
+  <button id="verifyBtn" onclick="manualVerify()"></button>
 </div>
 
 </div>
@@ -146,39 +80,26 @@ const APIKEY="DIN_API_KEY_HÄR";
 const PUBLIC_KEY="MCowBQYDK2VwAyEAPCxYBQ91z4NMHBU3cUW6P+DFCKQRfal/tcEqyAeXstk=";
 
 const translations={
-sv:{
-title:"Verifiera kursintyg",
-subtitle:"Extern verifiering via Smartintyg",
-info:"Detta är en extern och oberoende verifiering. Intyget verifieras kryptografiskt och är inte beroende av att Smartintyg är tillgängligt.",
-instruction:"Klistra in kod (SI-XXXX) eller JSON.",
-btn:"Verifiera",
-valid:"✅ Intyget är giltigt",
-invalid:"❌ Ogiltig signatur",
-nodata:"❌ Ingen verifieringsdata",
-offline:"⚠️ Smartintyg kunde inte nås. Intyget kan fortfarande vara giltigt.",
-name:"Namn:",
-course:"Kurs:",
-date:"Datum:",
-org:"Utfärdare:"
-},
-en:{
-title:"Verify certificate",
-subtitle:"External verification via Smartintyg",
-info:"This is an external independent verification. The certificate is cryptographically verified and does not depend on Smartintyg being available.",
-instruction:"Paste code or JSON.",
-btn:"Verify",
-valid:"✅ Certificate is valid",
-invalid:"❌ Invalid signature",
-nodata:"❌ No verification data",
-offline:"⚠️ Could not reach Smartintyg. Certificate may still be valid.",
-name:"Name:",
-course:"Course:",
-date:"Date:",
-org:"Issuer:"
-}
+sv:{title:"Verifiera kursintyg",subtitle:"Extern verifiering via Smartintyg",info:"Detta är en extern och oberoende verifiering. Intyget verifieras kryptografiskt och är inte beroende av att Smartintyg är tillgängligt.",instruction:"Klistra in kod (SI-XXXX) eller JSON.",btn:"Verifiera",valid:"Intyget är giltigt",invalid:"Ogiltig signatur",nodata:"Ingen verifieringsdata",offline:"Smartintyg kunde inte nås – intyget kan fortfarande vara giltigt.",name:"Namn:",course:"Kurs:",date:"Datum:",org:"Utfärdare:"},
+da:{title:"Verificer kursbevis",subtitle:"Ekstern verificering via Smartintyg",info:"Dette er en ekstern og uafhængig verificering. Beviset verificeres kryptografisk.",instruction:"Indsæt kode eller JSON.",btn:"Verificer",valid:"Beviset er gyldigt",invalid:"Ugyldig signatur",nodata:"Ingen data",offline:"Smartintyg kunne ikke nås – beviset kan stadig være gyldigt.",name:"Navn:",course:"Kursus:",date:"Dato:",org:"Udsteder:"},
+de:{title:"Zertifikat prüfen",subtitle:"Externe Verifizierung via Smartintyg",info:"Dies ist eine unabhängige externe Verifizierung.",instruction:"Code oder JSON einfügen.",btn:"Prüfen",valid:"Zertifikat ist gültig",invalid:"Ungültige Signatur",nodata:"Keine Daten",offline:"Smartintyg nicht erreichbar – Zertifikat kann gültig sein.",name:"Name:",course:"Kurs:",date:"Datum:",org:"Aussteller:"},
+en:{title:"Verify certificate",subtitle:"External verification via Smartintyg",info:"This is an independent external verification.",instruction:"Paste code or JSON.",btn:"Verify",valid:"Certificate is valid",invalid:"Invalid signature",nodata:"No verification data",offline:"Smartintyg unreachable – certificate may still be valid.",name:"Name:",course:"Course:",date:"Date:",org:"Issuer:"},
+es:{title:"Verificar certificado",subtitle:"Verificación externa via Smartintyg",info:"Verificación externa independiente.",instruction:"Pegue código o JSON.",btn:"Verificar",valid:"Certificado válido",invalid:"Firma inválida",nodata:"Sin datos",offline:"No se pudo contactar Smartintyg.",name:"Nombre:",course:"Curso:",date:"Fecha:",org:"Emisor:"},
+fi:{title:"Vahvista todistus",subtitle:"Ulkoinen vahvistus Smartintyg",info:"Riippumaton vahvistus.",instruction:"Liitä koodi tai JSON.",btn:"Vahvista",valid:"Todistus on voimassa",invalid:"Virheellinen allekirjoitus",nodata:"Ei tietoja",offline:"Smartintyg ei tavoitettavissa.",name:"Nimi:",course:"Kurssi:",date:"Päivä:",org:"Myöntäjä:"},
+fr:{title:"Vérifier certificat",subtitle:"Vérification externe via Smartintyg",info:"Vérification indépendante.",instruction:"Collez code ou JSON.",btn:"Vérifier",valid:"Certificat valide",invalid:"Signature invalide",nodata:"Aucune donnée",offline:"Smartintyg indisponible.",name:"Nom:",course:"Cours:",date:"Date:",org:"Émetteur:"},
+it:{title:"Verifica certificato",subtitle:"Verifica esterna Smartintyg",info:"Verifica indipendente.",instruction:"Incolla codice o JSON.",btn:"Verifica",valid:"Certificato valido",invalid:"Firma non valida",nodata:"Nessun dato",offline:"Smartintyg non raggiungibile.",name:"Nome:",course:"Corso:",date:"Data:",org:"Emittente:"},
+nl:{title:"Verifieer certificaat",subtitle:"Externe verificatie Smartintyg",info:"Onafhankelijke verificatie.",instruction:"Plak code of JSON.",btn:"Verifieer",valid:"Certificaat geldig",invalid:"Ongeldige handtekening",nodata:"Geen data",offline:"Smartintyg niet bereikbaar.",name:"Naam:",course:"Cursus:",date:"Datum:",org:"Uitgever:"},
+nb:{title:"Verifiser kursbevis",subtitle:"Ekstern verifisering via Smartintyg",info:"Uavhengig verifisering.",instruction:"Lim inn kode eller JSON.",btn:"Verifiser",valid:"Beviset er gyldig",invalid:"Ugyldig signatur",nodata:"Ingen data",offline:"Smartintyg utilgjengelig.",name:"Navn:",course:"Kurs:",date:"Dato:",org:"Utsteder:"},
+pl:{title:"Zweryfikuj certyfikat",subtitle:"Zewnętrzna weryfikacja Smartintyg",info:"Niezależna weryfikacja.",instruction:"Wklej kod lub JSON.",btn:"Weryfikuj",valid:"Certyfikat ważny",invalid:"Nieprawidłowy podpis",nodata:"Brak danych",offline:"Smartintyg niedostępny.",name:"Imię:",course:"Kurs:",date:"Data:",org:"Wystawca:"},
+pt:{title:"Verificar certificado",subtitle:"Verificação externa Smartintyg",info:"Verificação independente.",instruction:"Cole código ou JSON.",btn:"Verificar",valid:"Certificado válido",invalid:"Assinatura inválida",nodata:"Sem dados",offline:"Smartintyg indisponível.",name:"Nome:",course:"Curso:",date:"Data:",org:"Emissor:"}
 };
 
-let lang = translations[navigator.language?.slice(0,2)] ? navigator.language.slice(0,2) : "en";
+const languages=[
+{code:"sv",label:"Svenska"},{code:"da",label:"Dansk"},{code:"de",label:"Deutsch"},{code:"en",label:"English"},{code:"es",label:"Español"},{code:"fi",label:"Suomi"},{code:"fr",label:"Français"},{code:"it",label:"Italiano"},{code:"nl",label:"Nederlands"},{code:"nb",label:"Norsk"},{code:"pl",label:"Polski"},{code:"pt",label:"Português"}
+];
+
+let lang=(navigator.language||"sv").slice(0,2);
+if(!translations[lang]) lang="en";
 
 function applyLang(){
 const t=translations[lang];
@@ -191,36 +112,49 @@ tName.innerText=t.name;
 tCourse.innerText=t.course;
 tDate.innerText=t.date;
 tOrg.innerText=t.org;
-langLabel.innerText=lang.toUpperCase();
+langLabel.innerText=(languages.find(l=>l.code===lang)?.label)||lang.toUpperCase();
+}
+
+function buildMenu(){
+menu.innerHTML="";
+languages.forEach(l=>{
+const d=document.createElement("div");
+d.innerText=l.label;
+d.onclick=()=>{lang=l.code;applyLang();menu.style.display="none";}
+menu.appendChild(d);
+});
 }
 
 function toggleLang(){
-lang = lang==="sv" ? "en" : "sv";
-applyLang();
+menu.style.display=menu.style.display==="block"?"none":"block";
 }
 
-function showNotice(text){
+document.addEventListener("click",e=>{
+if(!document.querySelector(".lang-wrap").contains(e.target)){
+menu.style.display="none";
+}
+});
+
+function setStatus(ok){
+statusBox.classList.remove("hidden");
+statusBox.className="status "+(ok?"ok":"error");
+statusBox.innerText=(ok?"✔ ":"✖ ")+(ok?translations[lang].valid:translations[lang].invalid);
+}
+
+function showNotice(txt){
 notice.style.display="block";
-notice.innerText=text;
+notice.innerText=txt;
 }
 
-function showHuman(data){
-const nameVal=data.participant_name || "";
-const courseVal=data.course_title || data.course_name || "";
-const dateVal=data.certificate_date || data.issued_date || "";
-const orgVal=data.org_name || data.issuer_name || "";
-
-if(!nameVal && !courseVal && !dateVal) return;
-
-human.style.display="block";
-
-name.innerText=nameVal;
-course.innerText=courseVal;
-date.innerText=dateVal ? new Date(dateVal).toLocaleDateString(lang) : "";
-
-if(orgVal){
+function showDetails(d){
+details.style.display="block";
+name.innerText=d.participant_name||"";
+course.innerText=d.course_title||d.course_name||"";
+const dt=d.certificate_date||d.issued_date;
+date.innerText=dt?new Date(dt).toLocaleDateString(lang):"";
+if(d.org_name||d.issuer_name){
 orgRow.style.display="block";
-org.innerText=orgVal;
+org.innerText=d.org_name||d.issuer_name;
 }
 }
 
@@ -245,11 +179,9 @@ return data.found?data:null;
 
 function getData(){
 const p=new URLSearchParams(location.search);
-
 if(p.get("data")){
 try{return JSON.parse(atob(p.get("data")));}catch{}
 }
-
 if(p.get("d")){
 try{
 const bytes=Uint8Array.from(atob(p.get("d")),c=>c.charCodeAt(0));
@@ -258,34 +190,32 @@ const [hash,signature]=str.split(".");
 return {certificate_hash:hash,certificate_signature:signature};
 }catch{}
 }
-
 return null;
 }
 
 async function init(){
 applyLang();
+buildMenu();
 
-const params=new URLSearchParams(location.search);
-const code=params.get("code");
+const p=new URLSearchParams(location.search);
+const code=p.get("code");
 const data=getData();
 
-if(code || data){
-manualSection.classList.add("hidden");
-}
+if(code||data) manualSection.classList.add("hidden");
 
 if(code){
 const res=await fetchCertificate(code);
 if(!res){showNotice(translations[lang].offline);return;}
 const ok=await verifySignature(res.certificate_hash,res.certificate_signature);
-result.innerText=ok?translations[lang].valid:translations[lang].invalid;
-showHuman(res);
+setStatus(ok);
+showDetails(res);
 return;
 }
 
 if(data){
 const ok=await verifySignature(data.certificate_hash,data.certificate_signature);
-result.innerText=ok?translations[lang].valid:translations[lang].invalid;
-showHuman(data);
+setStatus(ok);
+showDetails(data);
 }
 }
 
